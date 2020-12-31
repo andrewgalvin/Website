@@ -29,16 +29,22 @@ const Footer = () => {
                     className={classes.root}
                     style={{padding:0}}
                     icon={<GitHub/>}
+                    target = "_blank"
+                    href = "https://github.com/andrewgalvin"
                 />
                 <BottomNavigationAction
                     className={classes.root}
                     style={{padding:0}}
                     icon={<LinkedIn/>}
+                    target = "_blank"
+                    href = "https://www.linkedin.com/in/andrew-galvin-0000001/"
                 />
                 <BottomNavigationAction
                     className={classes.root}
                     style={{padding:0}}
                     icon={<PhotoCamera/>}
+                    target = "_blank"
+                    href = "https://www.andrewgalvin.net"
                 />
             </BottomNavigation>
     )
