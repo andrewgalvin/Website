@@ -8,7 +8,6 @@ import {
 import Typed from 'react-typed'
 import {makeStyles} from "@material-ui/core"
 import avatar from '../avatar.png'
-import { TextFormatOutlined } from '@material-ui/icons'
 
 // CSS Styles
 const useStyles = makeStyles(theme=>({

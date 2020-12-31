@@ -1,8 +1,12 @@
 import React from 'react';
 import {makeStyles} from "@material-ui/core/styles";
-import {Typography, Box} from "@material-ui/core";
+import {Box} from "@material-ui/core";
 import Navbar from "./Navbar";
-import Particles from 'react-particles-js'
+import { VerticalTimeline, VerticalTimelineElement }  from 'react-vertical-timeline-component';
+import 'react-vertical-timeline-component/style.min.css';
+import Work from '@material-ui/icons/Work'
+import School from '@material-ui/icons/School'
+import Star from '@material-ui/icons/Star'
 
 
 const useStyles = makeStyles(theme => ({
@@ -103,75 +107,173 @@ const useStyles = makeStyles(theme => ({
         color: "white",
         padding: "0",
         textTransform: "uppercase"
+    },
+    particles:{
+        position: "absolute",
     }
 }));
 
+// const Resume = () => {
+//     const classes = useStyles();
+//     return (
+//         <>
+//             <Navbar/>
+//             <Box className={
+//                     classes.mainContainer
+//                 }
+//                 component="header">
+//                 <Typography className={
+//                         classes.heading
+//                     }
+//                     variant="h3"
+//                     align="center">Work Experience</Typography>
+//                 <Box component="div"
+//                     className={
+//                         classes.timeLine
+//                 }>
+//                     <Typography variant="h4"
+//                         className={
+//                             classes.timeLineYear + ' ' + classes.timeLineItem
+//                     }>2016</Typography>
+//                     <Box component="div" className={classes.timeLineItem}>
+//                         <Typography variant="h5" align="center" className={classes.subHeading}>
+//                             Photographer
+//                         </Typography>
+//                         <Typography variant="body1" align="center" style={{color: "#EE6C4D"}}>
+//                             Andrew Galvin Photography
+//                         </Typography>
+//                         <Typography variant="subtitle1" align="center" style={{color: "#A9D6E5"}}>
+//                             Description
+//                         </Typography>
+//                     </Box>
+//                     <Typography variant="h4"
+//                         className={
+//                             classes.timeLineYear + ' ' + classes.timeLineItem
+//                     }>2018</Typography>
+//                     <Box component="div" className={classes.timeLineItem}>
+//                         <Typography variant="h5" align="center" className={classes.subHeading}>
+//                             Merchandise Associate
+//                         </Typography>
+//                         <Typography variant="body1" align="center" style={{color: "#EE6C4D"}}>
+//                             Home Sense
+//                         </Typography>
+//                         <Typography variant="subtitle1" align="center" style={{color: "#A9D6E5"}}>
+//                             Description
+//                         </Typography>
+//                     </Box>
+//                     <Typography variant="h4"
+//                         className={
+//                             classes.timeLineYear + ' ' + classes.timeLineItem
+//                     }>2019</Typography>
+//                     <Box component="div" className={classes.timeLineItem}>
+//                         <Typography variant="h5" align="center" className={classes.subHeading}>
+//                             Summer Intern: Referrals Department
+//                         </Typography>
+//                         <Typography variant="body1" align="center" style={{color: "#EE6C4D"}}>
+//                             Harbor Health Services, Inc
+//                         </Typography>
+//                         <Typography variant="subtitle1" align="center" style={{color: "#A9D6E5"}}>
+//                             Description
+//                         </Typography>
+//                     </Box>
+//                 </Box>
+//             </Box>
+//         </>
+//     )
+// }
+
 const Resume = () => {
-    const classes = useStyles();
+    const classes = useStyles()
     return (
-        <>
+        <Box className={classes.mainContainer}>
             <Navbar/>
-            <Box className={
-                    classes.mainContainer
-                }
-                component="header">
-                <Typography className={
-                        classes.heading
-                    }
-                    variant="h3"
-                    align="center">Work Experience</Typography>
-                <Box component="div"
-                    className={
-                        classes.timeLine
-                }>
-                    <Typography variant="h4"
-                        className={
-                            classes.timeLineYear + ' ' + classes.timeLineItem
-                    }>2016</Typography>
-                    <Box component="div" className={classes.timeLineItem}>
-                        <Typography variant="h5" align="center" className={classes.subHeading}>
-                            Photographer
-                        </Typography>
-                        <Typography variant="body1" align="center" style={{color: "#EE6C4D"}}>
-                            Andrew Galvin Photography
-                        </Typography>
-                        <Typography variant="subtitle1" align="center" style={{color: "#A9D6E5"}}>
-                            Description
-                        </Typography>
-                    </Box>
-                    <Typography variant="h4"
-                        className={
-                            classes.timeLineYear + ' ' + classes.timeLineItem
-                    }>2018</Typography>
-                    <Box component="div" className={classes.timeLineItem}>
-                        <Typography variant="h5" align="center" className={classes.subHeading}>
-                            Merchandise Associate
-                        </Typography>
-                        <Typography variant="body1" align="center" style={{color: "#EE6C4D"}}>
-                            Home Sense
-                        </Typography>
-                        <Typography variant="subtitle1" align="center" style={{color: "#A9D6E5"}}>
-                            Description
-                        </Typography>
-                    </Box>
-                    <Typography variant="h4"
-                        className={
-                            classes.timeLineYear + ' ' + classes.timeLineItem
-                    }>2019</Typography>
-                    <Box component="div" className={classes.timeLineItem}>
-                        <Typography variant="h5" align="center" className={classes.subHeading}>
-                            Summer Intern: Referrals Department
-                        </Typography>
-                        <Typography variant="body1" align="center" style={{color: "#EE6C4D"}}>
-                            Harbor Health Services, Inc
-                        </Typography>
-                        <Typography variant="subtitle1" align="center" style={{color: "#A9D6E5"}}>
-                            Description
-                        </Typography>
-                    </Box>
-                </Box>
-            </Box>
-        </>
+            <VerticalTimeline >
+            <VerticalTimelineElement
+                className="vertical-timeline-element--work"
+                contentStyle={{ background: '#98C1D9', color: 'black' }}
+                contentArrowStyle={{ borderRight: '7px solid  #98C1D9' }}
+                iconStyle={{ background: '#98C1D9', color: '#fff' }}
+                icon={<Work />}
+            >
+                <h3 className="vertical-timeline-element-title">Creative Director</h3>
+                <h4 className="vertical-timeline-element-subtitle">Miami, FL</h4>
+                <p>
+                Creative Direction, User Experience, Visual Design, Project Management, Team Leading
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                className="vertical-timeline-element--work"
+                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                icon={<Work />}
+            >
+                <h3 className="vertical-timeline-element-title">Art Director</h3>
+                <h4 className="vertical-timeline-element-subtitle">San Francisco, CA</h4>
+                <p>
+                Creative Direction, User Experience, Visual Design, SEO, Online Marketing
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                className="vertical-timeline-element--work"
+                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                icon={<Work />}
+            >
+                <h3 className="vertical-timeline-element-title">Web Designer</h3>
+                <h4 className="vertical-timeline-element-subtitle">Los Angeles, CA</h4>
+                <p>
+                User Experience, Visual Design
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                className="vertical-timeline-element--work"
+                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                icon={<Work />}
+            >
+                <h3 className="vertical-timeline-element-title">Web Designer</h3>
+                <h4 className="vertical-timeline-element-subtitle">San Francisco, CA</h4>
+                <p>
+                User Experience, Visual Design
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                className="vertical-timeline-element--education"
+                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                icon={<School />}
+            >
+                <h3 className="vertical-timeline-element-title">Content Marketing for Web, Mobile and Social Media</h3>
+                <h4 className="vertical-timeline-element-subtitle">Online Course</h4>
+                <p>
+                Strategy, Social Media
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                className="vertical-timeline-element--education"
+                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                icon={<School />}
+            >
+                <h3 className="vertical-timeline-element-title">Agile Development Scrum Master</h3>
+                <h4 className="vertical-timeline-element-subtitle">Certification</h4>
+                <p>
+                Creative Direction, User Experience, Visual Design
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                className="vertical-timeline-element--education"
+                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                icon={<School />}
+            >
+                <h3 className="vertical-timeline-element-title">Bachelor of Science in Interactive Digital Media Visual Imaging</h3>
+                <h4 className="vertical-timeline-element-subtitle">Bachelor Degree</h4>
+                <p>
+                Creative Direction, Visual Design
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                iconStyle={{ background: 'rgb(16, 204, 82)', color: '#fff' }}
+                icon={<Star />}
+            />
+            </VerticalTimeline>
+        </Box>
+        
     )
 }
 

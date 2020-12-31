@@ -20,8 +20,7 @@ import {
     AssignmentInd,
     Home,
     Apps,
-    ContactMail,
-    ArrowRight
+    ContactMail
 } from "@material-ui/icons"
 import MenuIcon from '@material-ui/icons/Menu';
 import avatar from "../avatar.png"
