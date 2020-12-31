@@ -25,7 +25,7 @@ const useStyles = makeStyles(theme=>({
     },
     cardContainer:{
         maxWidth: 345,
-        margin: "3rem",
+        margin: "3rem", // eslint-disable-next-line
         margin: "5rem auto"
     }
 }))
