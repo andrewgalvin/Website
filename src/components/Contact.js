@@ -4,7 +4,6 @@ import {TextField, Typography, Button, Grid, Box} from '@material-ui/core'
 import SendIcon from '@material-ui/icons/Send'
 import Navbar from './Navbar'
 import emailjs from 'emailjs-com';
-import Particles from 'react-particles-js'
 
 const useStyles = makeStyles(theme=>({
     form: {
