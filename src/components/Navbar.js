@@ -97,14 +97,18 @@ const Navbar = () => {
             </List>
         </Box>
     )
-
+    
     return (
         <>
         
         <Box component="nav">
             <AppBar position="static" style={{background:"#293241"}}>
                 <Toolbar>
-                    <Typography variant="h5" style={{color:"white"}}>Portfolio</Typography>
+                    <Typography variant="h5" >
+                        <Link to="/" style={{textDecoration: 'none',color:"white"}} variant="inherit">
+                            Portfolio
+                        </Link>
+                    </Typography>
                     <Grid container justify="flex-end">
                         <IconButton onClick={toggleSlider("right", true)}>
                             <MenuIcon style={{color:"#EE6C4D"}}>
