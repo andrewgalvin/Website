@@ -11,7 +11,7 @@ import Star from '@material-ui/icons/Star'
 
 const useStyles = makeStyles(theme => ({
     mainContainer: {
-        background: "#3D5A80"
+        background: "#B5D2E3"
     },
     timeLine: {
         position: "relative",
@@ -189,21 +189,9 @@ const Resume = () => {
             <Navbar/>
             <VerticalTimeline >
             <VerticalTimelineElement
-                className="vertical-timeline-element--work"
-                contentStyle={{ background: '#98C1D9', color: 'black' }}
-                contentArrowStyle={{ borderRight: '7px solid  #98C1D9' }}
-                iconStyle={{ background: '#98C1D9', color: '#fff' }}
-                icon={<Work />}
-            >
-                <h3 className="vertical-timeline-element-title">IT Support Specialist | Braintree, MA</h3>
-                <h4 className="vertical-timeline-element-subtitle">Jan 2021 - Apr 2021</h4>
-                <p>
-                [INSERT DESCRIPTION HERE]
-                </p>
-            </VerticalTimelineElement>
-            <VerticalTimelineElement
                 className="vertical-timeline-element--education"
-                iconStyle={{ background: '#98C1D9', color: '#fff' }}
+                contentStyle={{ background: '#98c1d9', color: 'black' }}
+                iconStyle={{ background: '#293241', color: '#fff' }}
                 icon={<School />}
             >
                 <h3 className="vertical-timeline-element-title">Bachelor of Computer Science</h3>
@@ -214,44 +202,66 @@ const Resume = () => {
             </VerticalTimelineElement>
             <VerticalTimelineElement
                 className="vertical-timeline-element--work"
-                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                contentStyle={{ background: '#98c1d9', color: 'black' }}
+                contentArrowStyle={{ borderRight: '7px solid  #98C1D9' }}
+                iconStyle={{ background: '#293241', color: '#fff' }}
                 icon={<Work />}
+                date="Jan 2021 - Present"
             >
-                <h3 className="vertical-timeline-element-title">Merchandise Associate | Braintree, MA</h3>
-                <h4 className="vertical-timeline-element-subtitle">May 2018 - Jan 2-21</h4>
+                <h3 className="vertical-timeline-element-title">IT Support Specialist</h3>
+                <h4 className="vertical-timeline-element-subtitle">Baystate Physical Therapy, Braintree, MA</h4>
                 <p>
-                [INSERT DESCRIPTION HERE]
+                Researched and implemented new software to improve customer support
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                className="vertical-timeline-element--work"
+                iconStyle={{ background: '#293241', color: '#fff' }}
+                contentStyle={{color: 'black'}}
+                icon={<Work />}
+                date="Aug 2016 - Present"
+            >
+                <h3 className="vertical-timeline-element-title">Photographer</h3>
+                <h4 className="vertical-timeline-element-subtitle">Andrew Galvin Photography, Weymouth, MA</h4>
+                <p>
+                Specialize in senior and professional portraits
                 </p>
             </VerticalTimelineElement>
             <VerticalTimelineElement
                 className="vertical-timeline-element--work"
                 iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                contentStyle={{color: 'black'}}
                 icon={<Work />}
+                date="May 2018 - Jan 2021"
             >
-                <h3 className="vertical-timeline-element-title">Photographer | Weymouth, MA</h3>
-                <h4 className="vertical-timeline-element-subtitle">Aug 2016 - Present</h4>
+                <h3 className="vertical-timeline-element-title">Merchandise Associate</h3>
+                <h4 className="vertical-timeline-element-subtitle">Home Sense, Braintree, MA</h4>
                 <p>
-                [INSERT DESCRIPTION HERE]
+                Key contributor to the successful opening of a new store
                 </p>
             </VerticalTimelineElement>
             <VerticalTimelineElement
                 className="vertical-timeline-element--work"
                 iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                contentStyle={{color: 'black'}}
                 icon={<Work />}
+                date="May 2019 - Aug 2019"
             >
-                <h3 className="vertical-timeline-element-title">Summer Intern: Referrals Department | Brockton, MA</h3>
-                <h4 className="vertical-timeline-element-subtitle">May 2019 – Aug 2019</h4>
+                <h3 className="vertical-timeline-element-title">Summer Intern: Referrals Department</h3>
+                <h4 className="vertical-timeline-element-subtitle">Harbor Health Services, Brockton, MA</h4>
                 <p>
-                [INSERT DESCRIPTION HERE]
+                Assisted patients with obtaining medical referrals
                 </p>
             </VerticalTimelineElement>
             <VerticalTimelineElement
                 className="vertical-timeline-element--work"
                 iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                contentStyle={{color: 'black'}}
                 icon={<Work />}
+                date="June 2016 - Sept 2018"
             >
-                <h3 className="vertical-timeline-element-title">Prep Cook | Weymouth, MA</h3>
-                <h4 className="vertical-timeline-element-subtitle">June 2016 - Sept 2018</h4>
+                <h3 className="vertical-timeline-element-title">Prep Cook</h3>
+                <h4 className="vertical-timeline-element-subtitle">Olympic Pizza, Weymouth, MA</h4>
                 <p>
                 [INSERT DESCRIPTION HERE]
                 </p>
