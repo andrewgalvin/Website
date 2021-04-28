@@ -12,10 +12,10 @@ import {
     Typography
 } from '@material-ui/core'
 import Navbar from './Navbar';
-import project1 from '../images/html-css-javascript-lg.jpg';
-import project2 from '../images/javascript-fullstack.jpg';
-import project3 from '../images/react-redux.jpg'
-import project4 from '../images/mern-stack.jpg'
+import project1 from '../images/checkoutlogs.png';
+import project2 from '../images/tool.gif';
+import project3 from '../images/tickets.png'
+import project4 from '../images/connect4.png'
 
 
 const useStyles = makeStyles(theme=>({
@@ -30,8 +30,10 @@ const useStyles = makeStyles(theme=>({
     }
 }))
 
+
 const Portfolio = () => {
     const classes = useStyles();
+
     return (
         <>
         <Box component="div" className={classes.mainContainer}>
@@ -43,7 +45,7 @@ const Portfolio = () => {
                         <CardActionArea>
                             <CardMedia
                             component="img"
-                            alt="Project 1"
+                            alt="Bot Checkout Logs"
                             height="140"
                             image={project1}
                             />
@@ -51,19 +53,16 @@ const Portfolio = () => {
                                 <Typography
                                     gutterButtom variant="h5"
                                 >
-                                    Project 1
+                                    Sneaker Bot Checkout Logs
                                 </Typography>
                                 <Typography
                                     gutterButtom variant="body2" color="textSecondary" component="p"
                                 >
-                                    Lorem ipsum dolor sit amet consectetur
+                                    Website to monitor checkout logs as well as Shopify sites
                                 </Typography>
                             </CardContent>
                             <CardActions>
-                                <Button size="small" color="primary">
-                                    Share
-                                </Button>
-                                <Button size="small" color="primary">
+                                <Button size="small" color="primary" target = "_blank" href = "https://nokiny.com"> 
                                     Live Demo
                                 </Button>
                             </CardActions>
@@ -76,7 +75,7 @@ const Portfolio = () => {
                         <CardActionArea>
                             <CardMedia
                             component="img"
-                            alt="Project 2"
+                            alt="Supreme Tool"
                             height="140"
                             image={project2}
                             />
@@ -84,22 +83,22 @@ const Portfolio = () => {
                                 <Typography
                                     gutterButtom variant="h5"
                                 >
-                                    Project 2
+                                    Supreme Tool
                                 </Typography>
                                 <Typography
                                     gutterButtom variant="body2" color="textSecondary" component="p"
                                 >
-                                    Lorem ipsum dolor sit amet consectetur
+                                    Tool and auth API to add items to cart in milliseconds
                                 </Typography>
                             </CardContent>
-                            <CardActions>
+                            {/* <CardActions>
                                 <Button size="small" color="primary">
                                     Share
                                 </Button>
                                 <Button size="small" color="primary">
                                     Live Demo
                                 </Button>
-                            </CardActions>
+                            </CardActions> */}
                         </CardActionArea>
                     </Card>
                 </Grid>
@@ -109,7 +108,7 @@ const Portfolio = () => {
                         <CardActionArea>
                             <CardMedia
                             component="img"
-                            alt="Project 3"
+                            alt="Discord Ticket Tool"
                             height="140"
                             image={project3}
                             />
@@ -117,19 +116,19 @@ const Portfolio = () => {
                                 <Typography
                                     gutterButtom variant="h5"
                                 >
-                                    Project 3
+                                    Discord Ticket Tool
                                 </Typography>
                                 <Typography
                                     gutterButtom variant="body2" color="textSecondary" component="p"
                                 >
-                                    Lorem ipsum dolor sit amet consectetur
+                                    Decision tree automated ticket tool and logging
                                 </Typography>
                             </CardContent>
                             <CardActions>
                                 <Button size="small" color="primary">
                                     Share
                                 </Button>
-                                <Button size="small" color="primary">
+                                <Button size="small" color="primary" >
                                     Live Demo
                                 </Button>
                             </CardActions>
@@ -142,7 +141,7 @@ const Portfolio = () => {
                         <CardActionArea>
                             <CardMedia
                             component="img"
-                            alt="Project 4"
+                            alt="Connect 4"
                             height="140"
                             image={project4}
                             />
@@ -150,12 +149,12 @@ const Portfolio = () => {
                                 <Typography
                                     gutterButtom variant="h5"
                                 >
-                                    Project 4
+                                    Connect 4
                                 </Typography>
                                 <Typography
                                     gutterButtom variant="body2" color="textSecondary" component="p"
                                 >
-                                    Lorem ipsum dolor sit amet consectetur
+                                    Connect 4 using Java and Scenebuilder
                                 </Typography>
                             </CardContent>
                             <CardActions>
