@@ -158,11 +158,8 @@ const Portfolio = () => {
                                 </Typography>
                             </CardContent>
                             <CardActions>
-                                <Button size="small" color="primary">
-                                    Share
-                                </Button>
-                                <Button size="small" color="primary">
-                                    Live Demo
+                                <Button size="small" color="primary" target = "_blank" href = "https://github.com/andrewgalvin/Connect4">
+                                    View Source
                                 </Button>
                             </CardActions>
                         </CardActionArea>
