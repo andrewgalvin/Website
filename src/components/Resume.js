@@ -184,6 +184,8 @@ const useStyles = makeStyles(theme => ({
 
 const Resume = () => {
     const classes = useStyles()
+
+      
     return (
         <Box className={classes.mainContainer}>
             <Navbar/>
