@@ -195,87 +195,65 @@ const Resume = () => {
                 iconStyle={{ background: '#98C1D9', color: '#fff' }}
                 icon={<Work />}
             >
-                <h3 className="vertical-timeline-element-title">IT Support Specialist</h3>
-                <h4 className="vertical-timeline-element-subtitle">Braintree, MA</h4>
-                <p>
-                [INSERT DESCRIPTION HERE]
-                </p>
-            </VerticalTimelineElement>
-            <VerticalTimelineElement
-                className="vertical-timeline-element--work"
-                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
-                icon={<Work />}
-            >
-                <h3 className="vertical-timeline-element-title">Merchandise Associate</h3>
-                <h4 className="vertical-timeline-element-subtitle">Braintree, MA</h4>
-                <p>
-                [INSERT DESCRIPTION HERE]
-                </p>
-            </VerticalTimelineElement>
-            <VerticalTimelineElement
-                className="vertical-timeline-element--work"
-                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
-                icon={<Work />}
-            >
-                <h3 className="vertical-timeline-element-title">Photographer</h3>
-                <h4 className="vertical-timeline-element-subtitle">Weymouth, MA</h4>
-                <p>
-                [INSERT DESCRIPTION HERE]
-                </p>
-            </VerticalTimelineElement>
-            <VerticalTimelineElement
-                className="vertical-timeline-element--work"
-                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
-                icon={<Work />}
-            >
-                <h3 className="vertical-timeline-element-title">Summer Intern: Referrals Department</h3>
-                <h4 className="vertical-timeline-element-subtitle">Brockton, MA</h4>
-                <p>
-                [INSERT DESCRIPTION HERE]
-                </p>
-            </VerticalTimelineElement>
-            <VerticalTimelineElement
-                className="vertical-timeline-element--work"
-                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
-                icon={<Work />}
-            >
-                <h3 className="vertical-timeline-element-title">Prep Cook</h3>
-                <h4 className="vertical-timeline-element-subtitle">Brockton, MA</h4>
+                <h3 className="vertical-timeline-element-title">IT Support Specialist | Braintree, MA</h3>
+                <h4 className="vertical-timeline-element-subtitle">Jan 2021 - Apr 2021</h4>
                 <p>
                 [INSERT DESCRIPTION HERE]
                 </p>
             </VerticalTimelineElement>
             <VerticalTimelineElement
                 className="vertical-timeline-element--education"
-                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                iconStyle={{ background: '#98C1D9', color: '#fff' }}
                 icon={<School />}
             >
-                <h3 className="vertical-timeline-element-title">Content Marketing for Web, Mobile and Social Media</h3>
-                <h4 className="vertical-timeline-element-subtitle">Online Course</h4>
+                <h3 className="vertical-timeline-element-title">Bachelor of Computer Science</h3>
+                <h4 className="vertical-timeline-element-subtitle">Expected Gruaduation: Aug 2022</h4>
                 <p>
-                Strategy, Social Media
+                Wentworth Institute of Technology 
                 </p>
             </VerticalTimelineElement>
             <VerticalTimelineElement
-                className="vertical-timeline-element--education"
+                className="vertical-timeline-element--work"
                 iconStyle={{ background: '#EE6C4D', color: '#fff' }}
-                icon={<School />}
+                icon={<Work />}
             >
-                <h3 className="vertical-timeline-element-title">Agile Development Scrum Master</h3>
-                <h4 className="vertical-timeline-element-subtitle">Certification</h4>
+                <h3 className="vertical-timeline-element-title">Merchandise Associate | Braintree, MA</h3>
+                <h4 className="vertical-timeline-element-subtitle">May 2018 - Jan 2-21</h4>
                 <p>
-                Creative Direction, User Experience, Visual Design
+                [INSERT DESCRIPTION HERE]
                 </p>
             </VerticalTimelineElement>
             <VerticalTimelineElement
-                className="vertical-timeline-element--education"
+                className="vertical-timeline-element--work"
                 iconStyle={{ background: '#EE6C4D', color: '#fff' }}
-                icon={<School />}
+                icon={<Work />}
             >
-                <h3 className="vertical-timeline-element-title">Bachelor of Science in Interactive Digital Media Visual Imaging</h3>
-                <h4 className="vertical-timeline-element-subtitle">Bachelor Degree</h4>
+                <h3 className="vertical-timeline-element-title">Photographer | Weymouth, MA</h3>
+                <h4 className="vertical-timeline-element-subtitle">Aug 2016 - Present</h4>
                 <p>
-                Creative Direction, Visual Design
+                [INSERT DESCRIPTION HERE]
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                className="vertical-timeline-element--work"
+                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                icon={<Work />}
+            >
+                <h3 className="vertical-timeline-element-title">Summer Intern: Referrals Department | Brockton, MA</h3>
+                <h4 className="vertical-timeline-element-subtitle">May 2019 – Aug 2019</h4>
+                <p>
+                [INSERT DESCRIPTION HERE]
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                className="vertical-timeline-element--work"
+                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                icon={<Work />}
+            >
+                <h3 className="vertical-timeline-element-title">Prep Cook | Weymouth, MA</h3>
+                <h4 className="vertical-timeline-element-subtitle">June 2016 - Sept 2018</h4>
+                <p>
+                [INSERT DESCRIPTION HERE]
                 </p>
             </VerticalTimelineElement>
             <VerticalTimelineElement
