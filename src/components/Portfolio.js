@@ -88,7 +88,7 @@ const Portfolio = () => {
                                 <Typography
                                     gutterButtom variant="body2" color="textSecondary" component="p"
                                 >
-                                    Tool and auth API to add items to cart in milliseconds
+                                    Tool with auth API to add items to cart in milliseconds
                                 </Typography>
                             </CardContent>
                             {/* <CardActions>
