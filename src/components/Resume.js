@@ -196,7 +196,7 @@ const Resume = () => {
                 <h3 className="vertical-timeline-element-title">Prep Cook</h3>
                 <h4 className="vertical-timeline-element-subtitle">Olympic Pizza, Weymouth, MA</h4>
                 <p>
-                [INSERT DESCRIPTION HERE]
+                Prepared food vital for day to day business
                 </p>
             </VerticalTimelineElement>
             <VerticalTimelineElement

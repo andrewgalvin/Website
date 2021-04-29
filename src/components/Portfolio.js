@@ -12,10 +12,14 @@ import {
     Typography
 } from '@material-ui/core'
 import Navbar from './Navbar';
+import { ToastContainer, toast} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import project1 from '../images/checkoutlogs.png';
 import project2 from '../images/tool.gif';
 import project3 from '../images/tickets.png'
 import project4 from '../images/connect4.png'
+import project5 from '../images/fooji.png'
+import project6 from '../images/profilemanager.png'
 
 
 const useStyles = makeStyles(theme=>({
@@ -24,9 +28,11 @@ const useStyles = makeStyles(theme=>({
         height: "100%"
     },
     cardContainer:{
-        maxWidth: 345,
-        margin: "3rem", // eslint-disable-next-line
-        margin: "5rem auto"
+        height: 300,
+        width: 350,
+        margin: "1rem", // eslint-disable-next-line
+        margin: "5rem auto",
+        boxShadow: "5px 10px 10px #293241"
     }
 }))
 
@@ -34,13 +40,20 @@ const useStyles = makeStyles(theme=>({
 const Portfolio = () => {
     const classes = useStyles();
 
+    function handleClick () {
+        toast.error("Please contact me to see a demo!", {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 2500
+          });
+      }
+        
     return (
         <>
         <Box component="div" className={classes.mainContainer}>
             <Navbar/>
-            <Grid container justify="center" >
+            <Grid container justify="center" spacing={1} >
                 {/* Project 1 */}
-                <Grid item xs={12} sm={9} md={6}>
+                <Grid container item xs={5} spacing={10}>
                     <Card className={classes.cardContainer}>
                         <CardActionArea>
                             <CardMedia
@@ -58,52 +71,22 @@ const Portfolio = () => {
                                 <Typography
                                     gutterButtom variant="body2" color="textSecondary" component="p"
                                 >
-                                    Website to monitor checkout logs as well as Shopify sites
+                                    Website to monitor checkout logs and Shopify sites bot protection
                                 </Typography>
                             </CardContent>
                             <CardActions>
                                 <Button size="small" color="primary" target = "_blank" href = "https://nokiny.com"> 
                                     Live Demo
                                 </Button>
+                                <Button size="small" color="primary" target = "_blank" href = "https://github.com/andrewgalvin/checkout-logs" on>
+                                    View Source
+                                </Button>
                             </CardActions>
                         </CardActionArea>
                     </Card>
                 </Grid>
                 {/* Project 2 */}
-                <Grid item xs={12} sm={9} md={6}>
-                    <Card className={classes.cardContainer}>
-                        <CardActionArea>
-                            <CardMedia
-                            component="img"
-                            alt="Supreme Tool"
-                            height="140"
-                            image={project2}
-                            />
-                            <CardContent>
-                                <Typography
-                                    gutterButtom variant="h5"
-                                >
-                                    Supreme Tool
-                                </Typography>
-                                <Typography
-                                    gutterButtom variant="body2" color="textSecondary" component="p"
-                                >
-                                    Tool with auth API to add items to cart in milliseconds
-                                </Typography>
-                            </CardContent>
-                            {/* <CardActions>
-                                <Button size="small" color="primary">
-                                    Share
-                                </Button>
-                                <Button size="small" color="primary">
-                                    Live Demo
-                                </Button>
-                            </CardActions> */}
-                        </CardActionArea>
-                    </Card>
-                </Grid>
-                {/* Project 3 */}
-                <Grid item xs={12} sm={9} md={6}>
+                <Grid container item xs={5} spacing={10}>
                     <Card className={classes.cardContainer}>
                         <CardActionArea>
                             <CardMedia
@@ -125,10 +108,67 @@ const Portfolio = () => {
                                 </Typography>
                             </CardContent>
                             <CardActions>
-                                <Button size="small" color="primary">
-                                    Share
+                                <Button size="small" color="primary" onClick={handleClick}>
+                                    Live Demo
                                 </Button>
-                                <Button size="small" color="primary" >
+                            </CardActions>
+                        </CardActionArea>
+                    </Card>
+                </Grid>
+                {/* Project 6 */}
+                <Grid container item xs={5} spacing={10}>
+                    <Card className={classes.cardContainer}>
+                        <CardActionArea>
+                            <CardMedia
+                            component="img"
+                            alt="Profile Manager"
+                            height="140"
+                            image={project6}
+                            />
+                            <CardContent>
+                                <Typography
+                                    gutterButtom variant="h5"
+                                >
+                                    Sneaker Profile Manager
+                                </Typography>
+                                <Typography
+                                    gutterButtom variant="body2" color="textSecondary" component="p"
+                                >
+                                    Create and convert profiles for most sneaker bots
+                                </Typography>
+                            </CardContent>
+                            <CardActions>
+                                <Button size="small" color="primary" target = "_blank" href = "https://github.com/andrewgalvin/DiscordProfileConverter">
+                                    View Source
+                                </Button>
+                            </CardActions>
+                        </CardActionArea>
+                    </Card>
+                </Grid>
+                {/* Project 3 */}
+                <Grid container item xs={5} spacing={10}>
+                    <Card className={classes.cardContainer}>
+                        <CardActionArea>
+                            <CardMedia
+                            component="img"
+                            alt="Supreme Tool"
+                            height="140"
+                            image={project2}
+                            />
+                            <CardContent>
+                                <Typography
+                                    gutterButtom variant="h5"
+                                >
+                                    Supreme Tool
+                                </Typography>
+                                <Typography
+                                    gutterButtom variant="body2" color="textSecondary" component="p"
+                                >
+                                    Tool with auth API to add items to cart in milliseconds
+                                </Typography>
+                            </CardContent>
+                            <CardActions>
+                                <Button size="small" color="primary" target = "_blank" href = "https://www.youtube.com/watch?v=WghDFZ097Ys" on>
                                     Live Demo
                                 </Button>
                             </CardActions>
@@ -136,7 +176,7 @@ const Portfolio = () => {
                     </Card>
                 </Grid>
                 {/* Project 4 */}
-                <Grid item xs={12} sm={9} md={6}>
+                <Grid container item xs={5} spacing={10}>
                     <Card className={classes.cardContainer}>
                         <CardActionArea>
                             <CardMedia
@@ -165,8 +205,39 @@ const Portfolio = () => {
                         </CardActionArea>
                     </Card>
                 </Grid>
+                {/* Project 5 */}
+                <Grid container item xs={5} spacing={10}>
+                    <Card className={classes.cardContainer}>
+                        <CardActionArea>
+                            <CardMedia
+                            component="img"
+                            alt="Fooji Monitor"
+                            height="140"
+                            image={project5}
+                            />
+                            <CardContent>
+                                <Typography
+                                    gutterButtom variant="h5"
+                                >
+                                    Fooji Twitter Monitor
+                                </Typography>
+                                <Typography
+                                    gutterButtom variant="body2" color="textSecondary" component="p"
+                                >
+                                    Monitors tweets for Fooji giveaways and one click tweet to enter
+                                </Typography>
+                            </CardContent>
+                            <CardActions>
+                                <Button size="small" color="primary" target = "_blank" href = "https://twitter.com/WithoutRemorse/status/1386756971559280641">
+                                    Example Tweet
+                                </Button>
+                            </CardActions>
+                        </CardActionArea>
+                    </Card>
+                </Grid>
             </Grid>
         </Box>
+        <ToastContainer />  
         </>
     )
 }
