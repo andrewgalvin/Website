@@ -93,7 +93,7 @@ const Contact = () => {
             <Grid container justify="center">
                 <Box component="form" className={classes.form}>
                     <Typography variant="h5" style={{color: "#EE6C4D", textAlign: "center", textTransform: "uppercase"}}>
-                        Hire or contact me...
+                        Contact me!
                     </Typography>
                     <InputField fullWidth={true} label="Name" variant="outlined" margin="dense" size="medium" inputProps={{style:{color: "#E0FBFC"}}} onChange={(event) => {setName(event.target.value);}}  />
                     <br/>
