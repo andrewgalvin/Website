@@ -75,7 +75,7 @@ const Portfolio = () => {
                                 </Typography>
                             </CardContent>
                             <CardActions>
-                                <Button size="small" color="primary" target = "_blank" href = "https://nokiny.com"> 
+                                <Button size="small" color="primary" target = "_blank" href = "https://www.nokiny.com"> 
                                     Live Demo
                                 </Button>
                                 <Button size="small" color="primary" target = "_blank" href = "https://github.com/andrewgalvin/checkout-logs" on>
