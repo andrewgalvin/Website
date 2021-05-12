@@ -25,7 +25,7 @@ function App() {
         <Route path="/resume" component={Resume}/>
         <Route path="/portfolio" component={Portfolio}/>
         <Route path="/contact-me" component={Contact}/>
-        <Route omponent={Home}/>
+        <Route component={Home}/>
         </Switch>
         
       </>) : (<Grid container spacing={0} direction="column" alignItems="center" justify="center" style={{ minHeight: '100vh' }} >
