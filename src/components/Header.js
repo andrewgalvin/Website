@@ -52,7 +52,9 @@ const useStyles = makeStyles(theme=>({
         willChange: "transform",
         margin:"10px",
         width:"15%",
-        color:"#FFFFFF"
+        height:"50%",
+        color:"#FFFFFF",
+        borderRadius: "10px"
     }
 }));
 
@@ -132,7 +134,7 @@ var languages = [
     "ReactJS",
     "C",
     "SQL",
-    "Assembly Language"
+    "Assembly"
 ]
 
 const Header = () => {
@@ -164,7 +166,7 @@ const Header = () => {
             <div className={classes.column}>
                 {languages.map(item => (
                     <Card>
-                        {item}
+                        <Typography className={classes.subtitle2} variant="h6">{item}</Typography>
                     </Card>
                 ))}
             </div>
