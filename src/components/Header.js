@@ -3,11 +3,13 @@ import {
     Typography,
     Avatar,
     Grid,
-    Box
+    Box,
+    Button
 } from "@material-ui/core"
 import Typed from 'react-typed'
 import {makeStyles} from "@material-ui/core"
 import avatar from '../avatar.png'
+import resume from '../files/Resume.pdf'
 
 // CSS Styles
 const useStyles = makeStyles(theme=>({
@@ -33,14 +35,34 @@ const useStyles = makeStyles(theme=>({
     },
     subtitle2: {
         color:"#E0FBFC",
+    },
+    button: {
+        marginTop: "1rem",
+        backgroundColor: "#1F2632",
+        color: "#EE6C4D",
+        "&:hover": {
+            backgroundColor:"#293241"
+        }
+    },
+    resumeBox: {
+        position: "absolute",
+        top: "75%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "100vw",
+        textAlign: "center",
+        zIndex: 1
     }
 }));
 
 const Header = () => {
     const classes = useStyles();
+    const [shown, setShown] = React.useState(false);
 
     return (
-        <Box className={classes.typedContainer}>
+        <>
+        {shown ? <PDF src={resume}/> : null}
+        <Box className={classes.typedContainer} onClick={() => setShown(!shown)}>
             <Grid container justify="center">
                 <Avatar className={classes.avatar} src={avatar} alt="Andrew Galvin"></Avatar>
             </Grid>
@@ -60,8 +82,22 @@ const Header = () => {
             <Typography className={classes.subtitle2} variant="h6">
                 Python | Java | ReactJS | C | SQL | Assembly Language
             </Typography>
+            <Button onClick={() => setShown(!shown)} className={classes.button} size="small" color="primary"  on>View Resume</Button>
+
         </Box>
+        </>
     )
+}
+
+const PDF = (props) => {
+    return <iframe src={resume} style={{
+        position: "absolute",
+        top: "15%",
+        left: "25%",
+        width: "50%",
+        height: "75%",
+        zIndex:"9999"
+    }} title="Resume" click/>
 }
 
 export default Header
