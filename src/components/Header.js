@@ -21,7 +21,6 @@ const useStyles = makeStyles(theme=>({
     },
     subtitle: {
         color:"#EE6C4D",
-        marinBottom:"3rem"
     },
     typedContainer: {
         position: "absolute",
@@ -31,6 +30,9 @@ const useStyles = makeStyles(theme=>({
         width: "100vw",
         textAlign: "center",
         zIndex: 1
+    },
+    subtitle2: {
+        color:"#E0FBFC",
     }
 }));
 
@@ -53,6 +55,10 @@ const Header = () => {
                 backSpeed={40}
                 loop
                 />
+            </Typography>
+            <br/>
+            <Typography className={classes.subtitle2} variant="h6">
+                Python | Java | ReactJS | C | SQL | Assembly Language
             </Typography>
         </Box>
     )
