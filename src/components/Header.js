@@ -96,7 +96,8 @@ const PDF = (props) => {
         left: "25%",
         width: "50%",
         height: "75%",
-        zIndex:"9999"
+        zIndex:"9999",
+        border:"none"
     }} title="Resume" click/>
 }
 
