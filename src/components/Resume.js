@@ -120,39 +120,6 @@ const Resume = () => {
     return (
         <Box className={classes.mainContainer}>
             <Navbar/>
-            <Particles canvasClassName={classes.particles}>
-                params={{
-                    particles:{
-                        number:{
-                            value: 45,
-                            density: {
-                                enable: true,
-                                value_area: 900
-                            }
-                        },
-                        size:{
-                            value: 8,
-                            random: true,
-                            anim: {
-                                enable: true,
-                                speed: 6,
-                                size_min: 0.1,
-                                sync: true
-                            }
-                        },
-                        opacity: {
-                            value:1,
-                            random: true,
-                            anim: {
-                                enable: true,
-                                speed: 1,
-                                opacity_min: 0.1,
-                                sync: true
-                            }
-                        }
-                    }
-                }}
-            </Particles>
             <VerticalTimeline >
             <VerticalTimelineElement
                 className="vertical-timeline-element--education"
