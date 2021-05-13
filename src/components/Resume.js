@@ -8,6 +8,7 @@ import Work from '@material-ui/icons/Work'
 import School from '@material-ui/icons/School'
 import Star from '@material-ui/icons/Star'
 
+
 const useStyles = makeStyles(theme => ({
     mainContainer: {
         background: "#B5D2E3"
@@ -183,6 +184,19 @@ const Resume = () => {
                 <h4 className="vertical-timeline-element-subtitle">Harbor Health Services, Brockton, MA</h4>
                 <p>
                 Assisted patients with obtaining medical referrals
+                </p>
+            </VerticalTimelineElement>
+            <VerticalTimelineElement
+                className="vertical-timeline-element--work"
+                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
+                contentStyle={{color: 'black'}}
+                icon={<Work />}
+                date="June 2016 - Sept 2018"
+            >
+                <h3 className="vertical-timeline-element-title">Prep Cook</h3>
+                <h4 className="vertical-timeline-element-subtitle">Olympic Pizza, Weymouth, MA</h4>
+                <p>
+                Prepared food vital for day to day business
                 </p>
             </VerticalTimelineElement>
             <VerticalTimelineElement
