@@ -187,19 +187,6 @@ const Resume = () => {
                 </p>
             </VerticalTimelineElement>
             <VerticalTimelineElement
-                className="vertical-timeline-element--work"
-                iconStyle={{ background: '#EE6C4D', color: '#fff' }}
-                contentStyle={{color: 'black'}}
-                icon={<Work />}
-                date="June 2016 - Sept 2018"
-            >
-                <h3 className="vertical-timeline-element-title">Prep Cook</h3>
-                <h4 className="vertical-timeline-element-subtitle">Olympic Pizza, Weymouth, MA</h4>
-                <p>
-                Prepared food vital for day to day business
-                </p>
-            </VerticalTimelineElement>
-            <VerticalTimelineElement
                 iconStyle={{ background: 'rgb(16, 204, 82)', color: '#fff' }}
                 icon={<Star />}
             />
