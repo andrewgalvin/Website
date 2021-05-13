@@ -7,7 +7,6 @@ import 'react-vertical-timeline-component/style.min.css';
 import Work from '@material-ui/icons/Work'
 import School from '@material-ui/icons/School'
 import Star from '@material-ui/icons/Star'
-import Particles from 'react-particles-js'
 
 const useStyles = makeStyles(theme => ({
     mainContainer: {
