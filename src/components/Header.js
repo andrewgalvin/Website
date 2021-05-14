@@ -52,6 +52,20 @@ const useStyles = makeStyles(theme=>({
         width: "100vw",
         textAlign: "center",
         zIndex: 1
+    },
+    closeButton: {
+        backgroundColor: "#1F2632",
+        color: "#EE6C4D",
+        "&:hover": {
+            backgroundColor:"#293241"
+        },
+        position: "absolute",
+        top: "10%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "5vw",
+        textAlign: "center",
+        zIndex: 1
     }
 }));
 
@@ -61,8 +75,8 @@ const Header = () => {
 
     return (
         <>
-        {shown ? <PDF src={resume}/> : null}
-        <Box className={classes.typedContainer} onClick={() => setShown(!shown)}>
+        {shown ? <><PDF src={resume}/> <Button onClick={() => setShown(!shown)} className={classes.closeButton} size="small" color="primary"  on>Close Resume</Button></>: null}
+        <Box className={classes.typedContainer} >
             <Grid container justify="center">
                 <Avatar className={classes.avatar} src={avatar} alt="Andrew Galvin"></Avatar>
             </Grid>
@@ -90,7 +104,8 @@ const Header = () => {
 }
 
 const PDF = (props) => {
-    return <iframe src={resume} style={{
+    return <>
+    <iframe src={resume} style={{
         position: "absolute",
         top: "15%",
         left: "25%",
@@ -99,6 +114,9 @@ const PDF = (props) => {
         zIndex:"9999",
         border:"none"
     }} title="Resume" click/>
+    </>
+
+    
 }
 
 export default Header
