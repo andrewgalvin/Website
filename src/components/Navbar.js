@@ -103,10 +103,9 @@ const Navbar = () => {
     const classes = useStyles()
 
     const navLinks = [
-        { title: `home`, path: `/` },
         { title: `portfolio`, path: `/portfolio` },
         { title: `resume`, path: `/resume` },
-        { title: `contact`, path: `/contact` },
+        { title: `contact`, path: `/contact-me` },
       ];
 
     const sideList = slider => (
@@ -133,7 +132,7 @@ const Navbar = () => {
             <AppBar position="static" style={{background:"#293241"}}>
                 <Toolbar>
                     <Container maxWidth="md" className={classes.navbarDisplayFlex}>
-                        <IconButton edge="start" color="inherit" aria-label="home">
+                        <IconButton component={Link} to="/" edge="start" color="inherit" aria-label="home">
                             <Home fontSize="large" style={{color:"#EE6C4D"}}/>
                         </IconButton>
 
@@ -143,11 +142,11 @@ const Navbar = () => {
                             </IconButton> : 
                                 <List component="nav" aria-labelledby="main navigation" className={classes.navDisplayFlex}>
                                     {navLinks.map(({ title, path }) => (
-                                        <a href={path} key={title} className={classes.linkText}>
-                                            <ListItem button>
-                                            <ListItemText primary={title} />
+                                        // <a key={title} className={classes.linkText}>
+                                            <ListItem button component={Link} to={path}>
+                                            <ListItemText className={classes.linkText}primary={title} />
                                             </ListItem>
-                                        </a>
+                                        // </a>
                                     ))}
                                 </List>
                         }
