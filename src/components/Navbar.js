@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Link} from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
 import MobileRightMenuSlider from "@material-ui/core/Drawer"
@@ -12,9 +12,8 @@ import {
     Avatar,
     Box,
     List,
-    Typography,
     Divider,
-    Grid,
+    Container
 } from "@material-ui/core"
 import {
     AssignmentInd,
@@ -22,7 +21,6 @@ import {
     Apps,
     ContactMail
 } from "@material-ui/icons"
-import HomeIcon from '@material-ui/icons/Home';
 import MenuIcon from '@material-ui/icons/Menu';
 import avatar from "../avatar.png"
 import Footer from "./Footer"
@@ -43,7 +41,20 @@ const useStyles = makeStyles(theme=>({
     },
     listItem: {
         color: "#E0FBFC"
-    }
+    },
+    linkText: {
+    textDecoration: `none`,
+    textTransform: `uppercase`,
+    color: `#EE6C4D`
+  },
+  navbarDisplayFlex: {
+    display: `flex`,
+    justifyContent: `space-between`
+  },
+  navDisplayFlex: {
+    display: `flex`,
+    justifyContent: `space-between`
+  }
 }));
 
 const menuItems = [
@@ -74,11 +85,29 @@ const Navbar = () => {
         right: false
     })
 
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth)
+
+    useEffect(() => {
+        function handleResize() {
+          setWindowWidth(window.innerWidth)
+        }
+    
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+      }, [])
+
     const toggleSlider = (slider, open) => () => {
         setState({...state, [slider]: open});
     }
 
     const classes = useStyles()
+
+    const navLinks = [
+        { title: `home`, path: `/` },
+        { title: `portfolio`, path: `/portfolio` },
+        { title: `resume`, path: `/resume` },
+        { title: `contact`, path: `/contact` },
+      ];
 
     const sideList = slider => (
         <Box 
@@ -100,33 +129,86 @@ const Navbar = () => {
     )
     
     return (
-        <>
-        
         <Box component="nav">
             <AppBar position="static" style={{background:"#293241"}}>
                 <Toolbar>
-                    <IconButton aria-lable="home" component={Link} to="/">
-                        <HomeIcon style={{color:"#EE6C4D"}}/>
-                    </IconButton>
-                    <Grid container justify="flex-end">
-                        <IconButton onClick={toggleSlider("right", true)}>
-                            <MenuIcon style={{color:"#EE6C4D"}}>
-
-                            </MenuIcon>
+                    <Container maxWidth="md" className={classes.navbarDisplayFlex}>
+                        <IconButton edge="start" color="inherit" aria-label="home">
+                            <Home fontSize="large" style={{color:"#EE6C4D"}}/>
                         </IconButton>
 
-                    </Grid>
-                    <MobileRightMenuSlider 
-                    anchor="right"
-                    open={state.right}
-                    onClose={toggleSlider("right", false)}>
-                        {sideList("right")}
-                        <Footer/>
-                    </MobileRightMenuSlider>
+                        {windowWidth<600 ? 
+                            <IconButton onClick={toggleSlider("right", true)}>
+                                    <MenuIcon style={{color:"#EE6C4D"}}/>
+                            </IconButton> : 
+                                <List component="nav" aria-labelledby="main navigation" className={classes.navDisplayFlex}>
+                                    {navLinks.map(({ title, path }) => (
+                                        <a href={path} key={title} className={classes.linkText}>
+                                            <ListItem button>
+                                            <ListItemText primary={title} />
+                                            </ListItem>
+                                        </a>
+                                    ))}
+                                </List>
+                        }
+
+                        <MobileRightMenuSlider 
+                            anchor="right"
+                            open={state.right}
+                            onClose={toggleSlider("right", false)}>
+                                {sideList("right")}
+                            <Footer/>
+                        </MobileRightMenuSlider>
+                    </Container>
                 </Toolbar>
             </AppBar>
         </Box>
-        </>
+        // <>
+        
+        // <Box component="nav">
+        //     <AppBar position="static" style={{background:"#293241"}}>
+        //         <Toolbar>
+        //             <Container style= {{
+        //                 display: 'flex',
+        //                 justifyContenr: 'space-between'
+        //             }}>
+        //                 <IconButton aria-label="home" component={Link} to="/">
+        //                     <HomeIcon style={{color:"#EE6C4D"}}/>
+        //                 </IconButton>
+        //                 <List
+        //                     component="nav"
+        //                     aria-labelledby="main navigation"
+        //                     style={{
+        //                         display: "flex",
+        //                         justifyContent: "space-between"
+        //                     }}
+        //                 >
+        //                     {navLinks.map(({ title, path }) => (
+        //                     <a href={path} key={title} className={classes.linkText}>
+        //                         <ListItem button>
+        //                         <ListItemText primary={title} />
+        //                         </ListItem>
+        //                     </a>
+        //                     ))}
+        //                 </List>
+                        // <Grid container justify="flex-end">
+                        //     <IconButton onClick={toggleSlider("right", true)}>
+                        //         <MenuIcon style={{color:"#EE6C4D"}}/>
+                        //     </IconButton>
+                        // </Grid>
+                        // <MobileRightMenuSlider 
+                        // anchor="right"
+                        // open={state.right}
+                        // onClose={toggleSlider("right", false)}>
+                        //     {sideList("right")}
+                        //     <Footer/>
+                        // </MobileRightMenuSlider>
+        //             </Container>
+                    
+        //         </Toolbar>
+        //     </AppBar>
+        // </Box>
+        // </>
     )
 }
 
