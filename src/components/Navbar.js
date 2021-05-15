@@ -14,7 +14,7 @@ import {
     List,
     Typography,
     Divider,
-    Grid
+    Grid,
 } from "@material-ui/core"
 import {
     AssignmentInd,
@@ -22,6 +22,7 @@ import {
     Apps,
     ContactMail
 } from "@material-ui/icons"
+import HomeIcon from '@material-ui/icons/Home';
 import MenuIcon from '@material-ui/icons/Menu';
 import avatar from "../avatar.png"
 import Footer from "./Footer"
@@ -104,11 +105,9 @@ const Navbar = () => {
         <Box component="nav">
             <AppBar position="static" style={{background:"#293241"}}>
                 <Toolbar>
-                    <Typography variant="h5" >
-                        <Link to="/" style={{textDecoration: 'none',color:"white"}} variant="inherit">
-                            Portfolio
-                        </Link>
-                    </Typography>
+                    <IconButton aria-lable="home" component={Link} to="/">
+                        <HomeIcon style={{color:"#EE6C4D"}}/>
+                    </IconButton>
                     <Grid container justify="flex-end">
                         <IconButton onClick={toggleSlider("right", true)}>
                             <MenuIcon style={{color:"#EE6C4D"}}>
