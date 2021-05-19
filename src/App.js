@@ -25,7 +25,7 @@ function App() {
         <Route path="/portfolio" component={Portfolio}/>
         <Route path="/contact-me" component={Contact}/>
       </>) : (<Grid container spacing={0} direction="column" alignItems="center" justify="center" style={{ minHeight: '100vh' }} >
-              <img src={rendering} width="500" height="250" alt="Loading"/>
+              <img src={rendering} width="50%" height="auto" alt="Loading"/>
           </Grid>)}
     </>
   );
