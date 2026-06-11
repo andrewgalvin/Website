@@ -1,70 +1,56 @@
-# Getting Started with Create React App
+# andrewgalvin.net
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Personal portfolio of **Andrew Galvin** — senior software engineer in Boston
+building scalable systems and real-time market monitors, with an AI-augmented
+development workflow.
 
-## Available Scripts
+Rebuilt from the ground up in 2026 (previously Create React App + Material-UI)
+as a clean, minimal, light design. The site is a single static page with no
+framework: semantic HTML carries all content (good for SEO and screen
+readers), TypeScript modules add behavior, and the 3D hero accent is a
+lazy-loaded progressive enhancement that phones never download (the canvas is
+hidden below 64rem).
 
-In the project directory, you can run:
+## Stack
 
-### `npm start`
+| Layer      | Choice                                                     |
+| ---------- | ---------------------------------------------------------- |
+| Build      | [Vite](https://vite.dev) + TypeScript (strict)             |
+| 3D hero    | [Three.js](https://threejs.org) — lazy-loaded chunk        |
+| Animation  | [GSAP](https://gsap.com) + ScrollTrigger                   |
+| Styling    | Hand-rolled CSS custom-property design system              |
+| Contact    | EmailJS REST API (same service/template as the old site)   |
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Develop
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+```sh
+npm install
+npm run dev        # dev server with HMR
+npm run build      # typecheck + production build to dist/
+npm run preview    # serve the production build locally
+```
 
-### `npm test`
+## Structure
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```
+index.html              all content + meta/OG/JSON-LD (single page)
+public/                 favicon, resume PDF, robots.txt, sitemap.xml
+src/main.ts             entry — wires everything up
+src/styles/main.css     design tokens + component styles
+src/scene/heroScene.ts  Three.js network-graph hero (own chunk)
+src/lib/animations.ts   GSAP scroll animations & microinteractions
+src/lib/navigation.ts   mobile menu + a11y
+src/lib/contactForm.ts  EmailJS submission + validation
+```
 
-### `npm run build`
+## Performance & accessibility notes
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- The Three.js chunk loads on `requestIdleCallback`; the page is fully usable
+  before (and without) it. No WebGL → the CSS gradient backdrop stays.
+- The render loop pauses when the tab is hidden or the hero scrolls offscreen;
+  pixel ratio is capped (2 desktop / 1.5 mobile).
+- `prefers-reduced-motion` disables GSAP animations, the role cycler, and the
+  3D render loop (a single static frame is drawn instead).
+- Content is never hidden by CSS awaiting JavaScript — reveals are
+  JS-applied, so a broken script can't blank the page.
+- Update the resume by replacing `public/Andrew-Galvin-Resume.pdf`.
