@@ -1,7 +1,7 @@
 # andrewgalvin.net
 
-Personal portfolio of **Andrew Galvin** — senior software engineer in Boston
-building scalable systems and real-time market monitors, with an AI-augmented
+Personal portfolio of **Andrew Galvin**, a senior software engineer in Boston
+building scalable systems and real-time market monitors with an AI-first
 development workflow.
 
 Rebuilt from the ground up in 2026 (previously Create React App + Material-UI)

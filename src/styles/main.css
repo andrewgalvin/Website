@@ -164,6 +164,7 @@ ol[role="list"] {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  min-height: 44px;
   padding: 0.7rem 1.35rem;
   border-radius: 8px;
   border: 1px solid transparent;
@@ -279,10 +280,12 @@ ol[role="list"] {
 
 .nav-toggle {
   display: none;
+  align-items: center;
+  min-height: 44px;
   background: none;
   border: 1px solid var(--hairline-strong);
   border-radius: 8px;
-  padding: 0.45rem 0.9rem;
+  padding: 0.45rem 1rem;
   font-family: var(--font-display);
   font-size: 0.9rem;
   font-weight: 600;
@@ -415,8 +418,8 @@ ol[role="list"] {
 .hero-social a {
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
   color: var(--muted);
   text-decoration: none;
@@ -822,6 +825,9 @@ ol[role="list"] {
 .archive-item a {
   color: var(--accent);
   text-decoration: none;
+  /* enlarge the touch target without shifting the visual layout */
+  padding-block: 0.7rem;
+  margin-block: -0.7rem;
 }
 
 .archive-item a:hover {
@@ -920,6 +926,13 @@ ol[role="list"] {
   text-transform: uppercase;
   color: var(--faint);
   padding-top: 0.2rem;
+}
+
+.contact-list a {
+  display: inline-block;
+  /* enlarge the touch target without shifting the visual layout */
+  padding-block: 0.6rem;
+  margin-block: -0.6rem;
 }
 
 .contact-form {

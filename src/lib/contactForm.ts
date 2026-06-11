@@ -10,7 +10,7 @@ const EMAILJS_TEMPLATE_ID = 'template_dot2nfc'
 const EMAILJS_PUBLIC_KEY = 'user_rqdP5rFOtwU0LAcueNtOr'
 
 const FALLBACK_MESSAGE =
-  'Something went wrong — please email me directly at andrewggalvin@gmail.com.'
+  'Something went wrong. Please email me directly at andrewggalvin@gmail.com.'
 
 export function initContactForm(): void {
   const form = document.getElementById('contact-form')
@@ -44,7 +44,7 @@ export function initContactForm(): void {
     // honeypot: bots fill it, humans can't see it — quietly drop the message
     if (value('website') !== '') {
       form.reset()
-      setStatus('Thanks — your message is on its way!', 'success')
+      setStatus('Thanks! Your message is on its way.', 'success')
       return
     }
 
@@ -88,7 +88,7 @@ export function initContactForm(): void {
       })
       if (!res.ok) throw new Error(`EmailJS responded ${res.status}`)
       form.reset()
-      setStatus("Thanks — your message is on its way. I'll get back to you soon!", 'success')
+      setStatus("Thanks! Your message is on its way. I'll get back to you soon.", 'success')
     } catch {
       setStatus(FALLBACK_MESSAGE, 'error')
     } finally {
