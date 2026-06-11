@@ -7,6 +7,9 @@ initNavigation()
 initAnimations()
 initContactForm()
 
+const yearEl = document.getElementById('footer-year')
+if (yearEl) yearEl.textContent = String(new Date().getFullYear())
+
 /**
  * The Three.js scene is a progressive enhancement: it lives in its own lazy
  * chunk, loads at browser idle, and only on viewports wide enough to show it

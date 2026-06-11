@@ -49,8 +49,10 @@ src/lib/contactForm.ts  EmailJS submission + validation
   before (and without) it. No WebGL → the CSS gradient backdrop stays.
 - The render loop pauses when the tab is hidden or the hero scrolls offscreen;
   pixel ratio is capped (2 desktop / 1.5 mobile).
-- `prefers-reduced-motion` disables GSAP animations, the role cycler, and the
-  3D render loop (a single static frame is drawn instead).
+- Fonts are self-hosted variable woff2 latin subsets (preloaded); the page
+  makes zero third-party requests.
+- `prefers-reduced-motion` disables GSAP animations and the 3D render loop
+  (a single static frame is drawn instead).
 - Content is never hidden by CSS awaiting JavaScript — reveals are
   JS-applied, so a broken script can't blank the page.
 - Update the resume by replacing `public/Andrew-Galvin-Resume.pdf`.

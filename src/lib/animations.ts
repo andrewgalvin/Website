@@ -5,10 +5,14 @@ gsap.registerPlugin(ScrollTrigger)
 
 const SECTION_IDS = ['about', 'skills', 'experience', 'projects', 'education', 'contact']
 
+const counterParts = (el: HTMLElement) => ({
+  target: Number.parseFloat(el.dataset.count ?? '0'),
+  decimals: Number.parseInt(el.dataset.countDecimals ?? '0', 10),
+  suffix: el.dataset.countSuffix ?? '',
+})
+
 const counterFinalText = (el: HTMLElement) => {
-  const target = Number.parseFloat(el.dataset.count ?? '0')
-  const decimals = Number.parseInt(el.dataset.countDecimals ?? '0', 10)
-  const suffix = el.dataset.countSuffix ?? ''
+  const { target, decimals, suffix } = counterParts(el)
   return target.toFixed(decimals) + suffix
 }
 
@@ -100,9 +104,7 @@ function setupMotion(mm: gsap.MatchMedia, counters: HTMLElement[]): void {
 
     /* ---- stat counters ---- */
     counters.forEach((el) => {
-      const target = Number.parseFloat(el.dataset.count ?? '0')
-      const decimals = Number.parseInt(el.dataset.countDecimals ?? '0', 10)
-      const suffix = el.dataset.countSuffix ?? ''
+      const { target, decimals, suffix } = counterParts(el)
       const state = { value: 0 }
       gsap.to(state, {
         value: target,

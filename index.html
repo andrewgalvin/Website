@@ -10,11 +10,12 @@
       content="Andrew Galvin is a senior software engineer in Boston building scalable inventory systems and real-time market monitors for the live-events resale industry. He works AI-first and ships production software fast, with the tests to prove it."
     />
     <meta name="author" content="Andrew Galvin" />
-    <meta name="theme-color" content="#faf9f6" />
+    <meta name="theme-color" content="#f7f9fb" />
     <link rel="canonical" href="https://www.andrewgalvin.net/" />
 
     <!-- Open Graph / Twitter -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Andrew Galvin" />
     <meta property="og:url" content="https://www.andrewgalvin.net/" />
     <meta property="og:title" content="Andrew Galvin · Senior Software Engineer" />
     <meta
@@ -36,12 +37,9 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
 
     <script type="application/ld+json">
       {
@@ -407,9 +405,9 @@
                   A distributed monitoring platform that watched event
                   inventory and alerted users to in-stock tickets in near real
                   time. Concurrency controls, rate limiting, and fault-tolerant
-                  retries kept it reliable at a scale most side projects never
-                  see. Now retired, but it opened the door to the work I do
-                  today.
+                  retries kept it reliable while it processed around 50 million
+                  requests a day. Now retired, but it opened the door to the
+                  work I do today.
                 </p>
                 <ul class="featured-tags" role="list">
                   <li>Distributed systems</li>
@@ -585,7 +583,7 @@
 
     <footer class="site-footer">
       <div class="container footer-inner">
-        <p>© 2026 Andrew Galvin</p>
+        <p>© <span id="footer-year">2026</span> Andrew Galvin</p>
         <p>
           Built with
           <a href="https://threejs.org" target="_blank" rel="noopener">Three.js</a>,

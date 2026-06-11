@@ -24,10 +24,10 @@ import {
  */
 
 const PALETTE = {
-  node: 0x3d5a80, // b'dazzled blue — a nod to the old site
-  line: 0x16181d, // ink, used at very low opacity
-  packet: 0xee6c4d, // burnt sienna
-  core: 0xc14a24,
+  node: 0x3d5a80, // the original site's b'dazzled blue
+  line: 0x14181f, // ink, used at very low opacity
+  packet: 0x5b9bd5, // sky blue: requests in flight
+  core: 0x2b4a73, // deep navy
 }
 
 interface Packet {
@@ -214,7 +214,7 @@ export function initHeroScene(canvas: HTMLCanvasElement): () => void {
   const innerMat = new LineBasicMaterial({
     color: PALETTE.core,
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.55,
   })
   const inner = new LineSegments(innerGeo, innerMat)
   group.add(inner)
