@@ -83,9 +83,18 @@
 
 html {
   color-scheme: light;
-  scroll-behavior: smooth;
   scroll-padding-top: calc(var(--header-h) + 1.5rem);
   -webkit-text-size-adjust: 100%;
+}
+
+/* Smooth scrolling only once the visitor has interacted (focus-within) —
+   initial #hash loads jump instantly, so background-tab opens and crawlers
+   always land on the right section. rAF-driven smooth scrolls freeze in
+   hidden tabs otherwise. */
+@media (prefers-reduced-motion: no-preference) {
+  html:focus-within {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -1119,10 +1128,6 @@ ol[role="list"] {
 
 /* ---------- motion preferences ---------- */
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
   *,
   *::before,
   *::after {
