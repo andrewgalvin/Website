@@ -79,7 +79,9 @@ src/
     ui/                     small shared primitives (Icon)
   hooks/                    useMediaQuery
   lib/                      animations (GSAP), emphasis (inline *em* markers)
-  scene/heroScene.ts        Three.js network-graph hero (own chunk)
+  scene/heroScene.ts        Three.js monitoring-graph hero: packet trails,
+                            alerts pulsing the core, pointer-as-load heat,
+                            live ticker (own lazy chunk)
   styles/main.css           design tokens + component styles
 ```
 

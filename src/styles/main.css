@@ -445,6 +445,18 @@ ol[role="list"] {
   height: 100%;
 }
 
+/* live numbers from the scene's animation; empty until the scene boots */
+.hero-ticker {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.25rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
 @media (max-width: 63.99rem) {
   .hero-scene {
     display: none;
