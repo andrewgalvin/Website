@@ -224,7 +224,8 @@ ol[role="list"] {
 }
 
 .button:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.99);
+  transition-duration: 0.06s;
 }
 
 .button-primary {
@@ -360,7 +361,9 @@ ol[role="list"] {
   border-color: var(--ink);
 }
 
-@media (max-width: 47.99rem) {
+/* 56rem (not 48) so the full nav never collides with the brand — at iPad
+   portrait widths the row used to wrap and clip the résumé pill */
+@media (max-width: 55.99rem) {
   .nav-toggle {
     display: inline-flex;
   }
@@ -374,11 +377,27 @@ ol[role="list"] {
     border-bottom: 1px solid var(--hairline);
     box-shadow: 0 18px 40px -28px rgba(22, 24, 29, 0.35);
     display: none;
+    opacity: 0;
+    transform: translateY(-6px);
     padding: 0.75rem var(--gutter) 1.25rem;
+    transition:
+      opacity 0.22s ease,
+      transform 0.22s ease,
+      display 0.22s allow-discrete;
   }
 
   .nav-menu.is-open {
     display: block;
+    opacity: 1;
+    transform: none;
+  }
+
+  /* entry animation for the discrete display flip */
+  @starting-style {
+    .nav-menu.is-open {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
   }
 
   .nav-links {
@@ -458,8 +477,11 @@ ol[role="list"] {
 }
 
 .hero-sub em {
+  /* emphasis, not a link: highlighter wash instead of link-blue text */
   font-style: normal;
-  color: var(--accent);
+  font-weight: 600;
+  color: var(--ink);
+  background: linear-gradient(transparent 64%, var(--accent-wash) 64%);
 }
 
 .hero-actions {
@@ -516,6 +538,7 @@ ol[role="list"] {
   font-size: var(--step-4);
   font-weight: 700;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
   color: var(--accent);
   line-height: 1;
 }
@@ -526,6 +549,14 @@ ol[role="list"] {
   line-height: 1.45;
   color: var(--muted);
   max-width: 13rem;
+}
+
+.stats-asof {
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--faint);
 }
 
 @media (max-width: 40rem) {
@@ -695,12 +726,6 @@ ol[role="list"] {
   border-bottom: 1px solid var(--hairline);
   font-size: 0.95rem;
   color: var(--ink-soft);
-  transition: color 0.2s ease, border-bottom-color 0.2s ease;
-}
-
-.skill-group li:hover {
-  color: var(--ink);
-  border-bottom-color: var(--hairline-strong);
 }
 
 @media (max-width: 56rem) {
@@ -709,9 +734,12 @@ ol[role="list"] {
   }
 }
 
+/* stay two-up even on phones: items are short, and a one-column list of
+   26 rows is a two-screen wall between the sections people actually read */
 @media (max-width: 36rem) {
   .skills-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
   }
 }
 
@@ -785,7 +813,13 @@ ol[role="list"] {
 .timeline-org {
   margin-top: 0.25rem;
   font-weight: 500;
-  color: var(--accent);
+  color: var(--ink-soft);
+}
+
+.timeline-detail {
+  margin-top: 0.7rem;
+  font-size: 0.94rem;
+  color: var(--muted);
 }
 
 .timeline-bullets {
@@ -927,12 +961,8 @@ ol[role="list"] {
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
   color: var(--accent);
-  transition: color 0.3s ease;
-}
-
-.featured:hover .featured-number {
-  color: var(--accent-deep);
 }
 
 .featured-caption {
@@ -967,6 +997,7 @@ ol[role="list"] {
 }
 
 .archive-item {
+  position: relative;
   border-top: 1px solid var(--hairline-strong);
   padding-top: 1rem;
   display: flex;
@@ -975,17 +1006,19 @@ ol[role="list"] {
   transition: border-top-color 0.25s ease;
 }
 
-.archive-item:hover {
+/* only cards that actually link anywhere respond to hover — and the whole
+   card is the click target via the stretched link below */
+.archive-item:has(a):hover {
   border-top-color: var(--accent);
+}
+
+.archive-item:has(a):hover h4 {
+  color: var(--accent);
 }
 
 .archive-item h4 {
   font-size: 1.02rem;
   transition: color 0.25s ease;
-}
-
-.archive-item:hover h4 {
-  color: var(--accent);
 }
 
 .archive-item p {
@@ -1004,9 +1037,13 @@ ol[role="list"] {
 .archive-item a {
   color: var(--accent);
   text-decoration: none;
-  /* enlarge the touch target without shifting the visual layout */
-  padding-block: 0.7rem;
-  margin-block: -0.7rem;
+}
+
+/* stretched link: the whole card becomes the tap target */
+.archive-item a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
 }
 
 .archive-item a:hover {
@@ -1026,47 +1063,6 @@ ol[role="list"] {
 
 @media (max-width: 36rem) {
   .archive-list {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ---------- education ---------- */
-.education-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(1.75rem, 4vw, 3rem);
-}
-
-.education-item {
-  border-top: 2px solid var(--ink);
-  padding-top: 1.2rem;
-}
-
-.education-dates {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--faint);
-}
-
-.education-item h3 {
-  margin-top: 0.5rem;
-  font-size: var(--step-2);
-}
-
-.education-school {
-  margin-top: 0.3rem;
-  font-weight: 500;
-  color: var(--accent);
-}
-
-.education-detail {
-  margin-top: 0.7rem;
-  font-size: 0.94rem;
-  color: var(--muted);
-}
-
-@media (max-width: 48rem) {
-  .education-grid {
     grid-template-columns: 1fr;
   }
 }

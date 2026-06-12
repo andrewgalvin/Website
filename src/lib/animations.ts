@@ -3,7 +3,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const SECTION_IDS = ['about', 'projects', 'skills', 'experience', 'education', 'contact']
+const SECTION_IDS = ['about', 'projects', 'experience', 'skills', 'contact']
 
 const counterParts = (el: HTMLElement) => ({
   target: Number.parseFloat(el.dataset.count ?? '0'),
@@ -41,8 +41,8 @@ export function initAnimations(): void {
     if (!section || !link) return
     ScrollTrigger.create({
       trigger: section,
-      start: 'top 55%',
-      end: 'bottom 45%',
+      start: 'top 50%',
+      end: 'bottom 50%',
       onToggle: (self) => link.classList.toggle('is-active', self.isActive),
     })
   })
@@ -112,15 +112,23 @@ function setupMotion(mm: gsap.MatchMedia, counters: HTMLElement[]): void {
       })
     })
 
-    /* ---- stat counters ---- */
-    counters.forEach((el) => {
+    /* ---- stat counters ----
+       Hero counters wait for their block to finish fading in, then run as
+       a staggered trio — the count-up should be seen, not happen while the
+       stats are still transparent. Any future non-hero counter keeps the
+       scroll-triggered behavior. */
+    counters.forEach((el, i) => {
       const { target, decimals, suffix } = counterParts(el)
       const state = { value: 0 }
+      const inHero = Boolean(el.closest('.hero-stats'))
       gsap.to(state, {
         value: target,
-        duration: 1.4,
-        ease: 'power2.out',
-        scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+        duration: 1.2,
+        ease: 'power1.inOut',
+        delay: inHero ? 0.75 + i * 0.15 : 0,
+        scrollTrigger: inHero
+          ? undefined
+          : { trigger: el, start: 'top 90%', once: true },
         onUpdate: () => {
           el.textContent = state.value.toFixed(decimals) + suffix
         },

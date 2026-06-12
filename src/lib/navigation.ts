@@ -11,6 +11,7 @@ export function initNavigation(): void {
 
   const setOpen = (open: boolean, { restoreFocus = false } = {}) => {
     toggle.setAttribute('aria-expanded', String(open))
+    toggle.textContent = open ? 'Close' : 'Menu'
     menu.classList.toggle('is-open', open)
     if (open) {
       menu.querySelector<HTMLElement>('a')?.focus()
@@ -30,7 +31,7 @@ export function initNavigation(): void {
   })
 
   // leaving the mobile breakpoint clears any leftover overlay state
-  matchMedia('(min-width: 48rem)').addEventListener('change', (e) => {
+  matchMedia('(min-width: 56rem)').addEventListener('change', (e) => {
     if (e.matches && isOpen()) setOpen(false)
   })
 }

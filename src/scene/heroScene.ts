@@ -173,10 +173,10 @@ export function initHeroScene(canvas: HTMLCanvasElement): () => void {
 
   const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
-  const updatePackets = (dt: number) => {
+  const updatePackets = (dt: number, speedScale = 1) => {
     for (let i = 0; i < packets.length; i++) {
       const p = packets[i]
-      p.t += dt * p.speed
+      p.t += dt * p.speed * speedScale
       while (p.t >= 1) {
         p.t -= 1
         const arrived = p.to
@@ -266,7 +266,10 @@ export function initHeroScene(canvas: HTMLCanvasElement): () => void {
     }
     camera.lookAt(lookTarget)
 
-    updatePackets(dt)
+    // boot-up: traffic ramps from a trickle to full flow over the first
+    // seconds, so the network reads as coming online with the hero intro
+    const boot = smoothstep(Math.min(1, elapsed / 2.5))
+    updatePackets(dt, 0.25 + 0.75 * boot)
     renderer.render(scene, camera)
   }
 
@@ -299,6 +302,15 @@ export function initHeroScene(canvas: HTMLCanvasElement): () => void {
     updatePackets(0)
     renderer.render(scene, camera)
   } else {
+    // the canvas fades in over the first rendered frames; the timeout
+    // backstops occluded tabs where rAF is throttled
+    canvas.style.opacity = '0'
+    canvas.style.transition = 'opacity 0.9s ease'
+    const reveal = () => {
+      canvas.style.opacity = '1'
+    }
+    requestAnimationFrame(reveal)
+    setTimeout(reveal, 400)
     setRunning(true)
   }
 

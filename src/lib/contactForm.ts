@@ -27,12 +27,10 @@ export function initContactForm(): void {
     status.classList.toggle('is-error', kind === 'error')
   }
 
-  const requiredFields = ['firstName', 'lastName', 'email', 'subject', 'message'] as const
+  const requiredFields = ['name', 'email', 'message'] as const
   const labels: Record<(typeof requiredFields)[number], string> = {
-    firstName: 'first name',
-    lastName: 'last name',
+    name: 'name',
     email: 'email',
-    subject: 'subject',
     message: 'message',
   }
 
@@ -93,10 +91,10 @@ export function initContactForm(): void {
           template_id: EMAILJS_TEMPLATE_ID,
           user_id: EMAILJS_PUBLIC_KEY,
           template_params: {
-            name: `${value('firstName')} ${value('lastName')}`,
+            name: value('name'),
             email: value('email'),
             companyName: value('companyName'),
-            subject: value('subject'),
+            subject: value('subject') || 'Portfolio contact',
             message: value('message'),
           },
         }),
