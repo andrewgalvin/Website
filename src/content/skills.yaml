@@ -1,5 +1,6 @@
 # Skill groups, in display order. `featured: true` gives a group the
 # accented card treatment (one group max keeps the design balanced).
+# Every item here is backed by shipped code across the GitHub repos.
 
 title: Skills
 
@@ -7,38 +8,36 @@ groups:
   - title: Languages
     items:
       - Go
-      - Python
-      - Java
       - TypeScript
-      - JavaScript
+      - Python
       - SQL
+      - React
+      - Swift
 
-  - title: Backend & Platform
+  - title: Backend & Distributed Systems
     items:
-      - Node.js
-      - REST APIs
+      - REST APIs (chi, Fiber, FastAPI)
       - PostgreSQL
-      - AWS
-      - Docker
-      - CI/CD
+      - Real-time WebSockets
+      - Concurrency & scheduling
+      - JWT & RBAC auth
+      - Embedded stores (SQLite)
 
   - title: AI-Augmented Development
     featured: true
     items:
-      - Claude
-      - Cursor
-      - Codex
-      - ChatGPT
-      - LLM integration
-      - Local models (Ollama)
-      - AI-assisted testing
+      - Claude / Anthropic API
+      - Local LLMs (Ollama, MLX)
+      - LLM-powered features
       - AI code review
+      - AI-first workflow
+      - Cursor
 
-  - title: Product & Practice
+  - title: Cloud, Infra & Delivery
     items:
-      - React
-      - Angular
+      - AWS (ECS, ECR, CDK)
+      - Docker
+      - GitHub Actions CI/CD
+      - Supabase
+      - React Native / Expo
       - Electron
-      - Stripe
-      - System design
-      - Testing strategy

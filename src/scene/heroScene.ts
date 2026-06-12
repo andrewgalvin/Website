@@ -59,6 +59,16 @@ const SECTION_H = 152
 const PANEL_H = SECTION_H * 3
 const RADIUS = 16
 const PAD = 26
+
+/** public aggregate stats from eSnipe production (counts only, 60s cache) */
+const STATS_URL = 'https://xdpizcaopjvulpoyyxum.supabase.co/functions/v1/portfolio-stats'
+const STATS_REFRESH_MS = 60_000
+
+interface LiveStats {
+  activeSearches: number
+  findsLastHour: number
+  secondsSinceLastPoll: number | null
+}
 /** css-px y offsets of the three section centers from the panel center */
 const SECTION_OFFSETS = [-SECTION_H, 0, SECTION_H]
 /** canvas-2d textures draw at 2x and minify, which keeps the type crisp */
@@ -189,6 +199,18 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
     return panel
   }
 
+  /* ---- live mode: when eSnipe's stats endpoint answers, the console
+     stops simulating and shows production truth — poll freshness ticking,
+     the real active-search count, the real last-hour find count with grid
+     pops at the measured rate. The simulation is the fallback. ---- */
+  let live: LiveStats | null = null
+  let liveFetchedAt = 0 // elapsed seconds when stats were fetched
+  let liveSeconds = 0 // ticking "last poll" readout
+  let nextLivePopIn = 0
+  // in live mode a cell stays lit ~25s after its pop, so the grid shows
+  // the recent find stream rather than a meaningless fill count
+  const cellAge = Array.from({ length: CELL_COUNT }, () => -Infinity)
+
   /* ---- the console base: one card, three sections, internal hairlines.
      All static furniture (labels, metas, placeholders) bakes in here. ---- */
   const sectionLabel = (
@@ -227,19 +249,25 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
       ctx.lineTo(PANEL_W - 22, yy + 0.5)
       ctx.stroke()
     }
-    sectionLabel(ctx, 'REQUESTS / SEC', 0)
-    sectionLabel(ctx, 'MONITORS', SECTION_H, 'showing 14 of 285')
-    // "finds", not "alerts": on a resale monitor a hit is a win, and the
-    // label should read as good news at a glance. "this session" is the
-    // truth: the counter starts at zero when the page loads.
-    sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'this session')
+    if (live) {
+      sectionLabel(ctx, 'LAST EBAY POLL', 0, 'refreshes 60s')
+      sectionLabel(ctx, 'SEARCHES', SECTION_H, `showing 14 of ${live.activeSearches}`)
+      sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'last hour')
+    } else {
+      sectionLabel(ctx, 'REQUESTS / SEC', 0)
+      sectionLabel(ctx, 'MONITORS', SECTION_H, 'showing 14 of 285')
+      // "finds", not "alerts": on a resale monitor a hit is a win, and the
+      // label should read as good news at a glance. "this session" is the
+      // truth: the counter starts at zero when the page loads.
+      sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'this session')
+    }
     // the page's real numbers are stamped and honest; the console says
-    // plainly that it is not one of them
+    // plainly which kind it is showing
     ctx.fillStyle = SLATE
     ctx.font = `400 10px ${MONO}`
     ctx.letterSpacing = '0.5px'
     ctx.textAlign = 'right'
-    ctx.fillText('simulated feed', PANEL_W - PAD, PANEL_H - 13)
+    ctx.fillText(live ? 'live · eSnipe production' : 'simulated feed', PANEL_W - PAD, PANEL_H - 13)
     ctx.textAlign = 'left'
     ctx.letterSpacing = '0px'
     // alert grid placeholders
@@ -314,7 +342,7 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   const rpsPanel = makePanel(220, 84, (ctx) => {
     ctx.fillStyle = INK
     ctx.font = `500 64px ${MONO}`
-    ctx.fillText(String(rpsShown), 0, 62)
+    ctx.fillText(live ? `${liveSeconds}s` : String(rpsShown), 0, 62)
   })
   rpsPanel.mesh.position.set(-PANEL_W / 2 + PAD + 110, -(BASELINE_1 - 62 + 40), 4)
   rpsPanel.mesh.renderOrder = 1
@@ -374,13 +402,13 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   sections[1].group.add(monMesh)
 
   /* ---- section 3: alert counter + the grid the finds file into ---- */
-  const alertPanel = makePanel(160, 70, (ctx) => {
+  const alertPanel = makePanel(220, 70, (ctx) => {
     ctx.fillStyle = '#ffffff' // tinted by the material so the flash is free
-    ctx.font = `500 48px ${MONO}`
-    ctx.fillText(String(alerts), 0, 52)
+    ctx.font = `500 ${live ? 42 : 48}px ${MONO}`
+    ctx.fillText(live ? live.findsLastHour.toLocaleString('en-US') : String(alerts), 0, 52)
   })
   alertPanel.mat.color.set(INK)
-  alertPanel.mesh.position.set(-PANEL_W / 2 + PAD + 80, -(BASELINE_3 - 52 + 33), 4)
+  alertPanel.mesh.position.set(-PANEL_W / 2 + PAD + 110, -(BASELINE_3 - 52 + 33), 4)
   alertPanel.mesh.renderOrder = 1
   sections[2].group.add(alertPanel.mesh)
 
@@ -397,7 +425,7 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
     const k = easeOutCubic(Math.min(1, popK))
     for (let n = 0; n < CELL_COUNT; n++) {
       const isPop = n === popSlot && popK < 1
-      const on = n < filled
+      const on = live ? elapsed - cellAge[n] < 25 : n < filled
       const sc = on ? (isPop ? 1 + 0.6 * (1 - k) * (1 - k) : 1) : 0.0001
       m4.compose(
         vPos.set(CELL_X0 + (n % 6) * CELL_PITCH, -(CELL_Y0 + Math.floor(n / 6) * CELL_PITCH), 4),
@@ -474,33 +502,44 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
     lift += (18 * maxHover - lift) * Math.min(1, dt * 6)
     shadowMat.opacity = 0.16 - 0.04 * maxHover
 
-    // requests/sec: spin up, then a lively smoothed walk; hover widens the
-    // jitter like a load spike. The wander retargets often enough that the
-    // sparkline always breathes.
-    if (elapsed >= nextWanderAt) {
-      wanderTarget = 565 + Math.random() * 80
-      nextWanderAt = elapsed + 1.1 + Math.random() * 1.2
-    }
-    const boot = Math.min(1, elapsed / 1.6)
-    const target = wanderTarget * easeOutCubic(boot)
-    const amp = 170 * (1 + 1.6 * sections[0].hover)
-    rpsValue += (target - rpsValue) * Math.min(1, dt * 2.4) + (Math.random() - 0.5) * dt * amp
-    rpsValue = Math.min(680, Math.max(0, rpsValue))
+    barMesh.visible = !live
+    if (live) {
+      // section 1 becomes poll freshness: a true ticking readout, reset
+      // by every 60s refetch
+      const s = Math.max(0, Math.floor((live.secondsSinceLastPoll ?? 0) + (elapsed - liveFetchedAt)))
+      if (s !== liveSeconds) {
+        liveSeconds = s
+        rpsPanel.redraw()
+      }
+    } else {
+      // requests/sec: spin up, then a lively smoothed walk; hover widens
+      // the jitter like a load spike. The wander retargets often enough
+      // that the sparkline always breathes.
+      if (elapsed >= nextWanderAt) {
+        wanderTarget = 565 + Math.random() * 80
+        nextWanderAt = elapsed + 1.1 + Math.random() * 1.2
+      }
+      const boot = Math.min(1, elapsed / 1.6)
+      const target = wanderTarget * easeOutCubic(boot)
+      const amp = 170 * (1 + 1.6 * sections[0].hover)
+      rpsValue += (target - rpsValue) * Math.min(1, dt * 2.4) + (Math.random() - 0.5) * dt * amp
+      rpsValue = Math.min(680, Math.max(0, rpsValue))
 
-    const shown = Math.round(rpsValue)
-    if (shown !== rpsShown && elapsed - lastNumeralAt >= 0.125) {
-      rpsShown = shown
-      lastNumeralAt = elapsed
-      rpsPanel.redraw()
-    }
+      const shown = Math.round(rpsValue)
+      if (shown !== rpsShown && elapsed - lastNumeralAt >= 0.125) {
+        rpsShown = shown
+        lastNumeralAt = elapsed
+        rpsPanel.redraw()
+      }
 
-    sampleIn -= dt * (1 + 0.7 * sections[0].hover)
-    if (sampleIn <= 0) {
-      sampleIn += 0.18
-      samples.shift()
-      // sampled with its own texture so neighbours never flatline together
-      samples.push(rpsValue + (Math.random() - 0.5) * 24)
-      layoutBars()
+      sampleIn -= dt * (1 + 0.7 * sections[0].hover)
+      if (sampleIn <= 0) {
+        sampleIn += 0.18
+        samples.shift()
+        // sampled with its own texture so neighbours never flatline together
+        samples.push(rpsValue + (Math.random() - 0.5) * 24)
+        layoutBars()
+      }
     }
 
     // monitors: every packet polls on its own cadence; hover raises tempo
@@ -520,16 +559,32 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
     monMesh.instanceMatrix.needsUpdate = true
     if (monMesh.instanceColor) monMesh.instanceColor.needsUpdate = true
 
-    // alerts: a find every few seconds; the numeral flashes and the packet
-    // files into the grid, recycling the oldest slot once full
-    alertIn -= dt * (1 + 2.2 * sections[2].hover)
-    if (alertIn <= 0) {
-      alerts++
-      alertIn = alerts < 3 ? 1.2 + Math.random() * 1.2 : 4 + Math.random() * 3
-      popSlot = (alerts - 1) % CELL_COUNT
-      popK = 0
-      numFlash = 1
-      alertPanel.redraw()
+    if (live) {
+      // grid cells pop at the real measured find rate (exponential
+      // inter-arrival around findsLastHour/3600 per second) — each pop is
+      // "a find happened, statistically, just now". No hover acceleration:
+      // the rate is a measurement, not a toy.
+      nextLivePopIn -= dt
+      if (nextLivePopIn <= 0) {
+        const ratePerSec = Math.max(0.03, live.findsLastHour / 3600)
+        nextLivePopIn = Math.min(20, -Math.log(1 - Math.random()) / ratePerSec)
+        popSlot = (popSlot + 1 + Math.floor(Math.random() * 4)) % CELL_COUNT
+        cellAge[popSlot] = elapsed
+        popK = 0
+        numFlash = Math.max(numFlash, 0.5)
+      }
+    } else {
+      // alerts: a find every few seconds; the numeral flashes and the
+      // packet files into the grid, recycling the oldest slot once full
+      alertIn -= dt * (1 + 2.2 * sections[2].hover)
+      if (alertIn <= 0) {
+        alerts++
+        alertIn = alerts < 3 ? 1.2 + Math.random() * 1.2 : 4 + Math.random() * 3
+        popSlot = (alerts - 1) % CELL_COUNT
+        popK = 0
+        numFlash = 1
+        alertPanel.redraw()
+      }
     }
     if (popK < 1) popK = Math.min(1, popK + dt / 0.45)
     numFlash *= Math.exp(-dt * 3)
@@ -637,6 +692,52 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   io.observe(canvas)
 
   let disposed = false
+
+  /* ---- live stats: fetch on boot, refresh every 60s; any failure or
+     malformed payload simply leaves the simulation running ---- */
+  const applyLive = (stats: LiveStats) => {
+    if (disposed) return
+    const first = live === null
+    live = stats
+    liveFetchedAt = elapsed
+    liveSeconds = Math.max(0, stats.secondsSinceLastPoll ?? 0)
+    if (first) {
+      // entering live mode: seed the grid mid-stream so it doesn't start
+      // empty, and let the find-rate clock start immediately
+      const ratePerSec = Math.max(0.03, stats.findsLastHour / 3600)
+      for (let n = 0; n < CELL_COUNT; n++) {
+        if (Math.random() < 0.5) cellAge[n] = elapsed - Math.random() * 25
+      }
+      nextLivePopIn = Math.min(20, -Math.log(1 - Math.random()) / ratePerSec)
+    }
+    numFlash = 1
+    consoleBase.redraw()
+    rpsPanel.redraw()
+    alertPanel.redraw()
+  }
+  const fetchStats = async () => {
+    try {
+      const res = await fetch(STATS_URL, { signal: AbortSignal.timeout(4000) })
+      if (!res.ok) return
+      const data = (await res.json()) as Partial<LiveStats>
+      if (typeof data.activeSearches === 'number' && typeof data.findsLastHour === 'number') {
+        applyLive({
+          activeSearches: data.activeSearches,
+          findsLastHour: data.findsLastHour,
+          secondsSinceLastPoll:
+            typeof data.secondsSinceLastPoll === 'number' ? data.secondsSinceLastPoll : null,
+        })
+      }
+    } catch {
+      // offline, blocked, or slow: the simulation keeps the seat warm
+    }
+  }
+  let statsTimer = 0
+  if (!prefersReduced) {
+    fetchStats()
+    statsTimer = window.setInterval(fetchStats, STATS_REFRESH_MS)
+  }
+
   resize()
   step(0)
 
@@ -670,6 +771,7 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
 
   return () => {
     disposed = true
+    clearInterval(statsTimer)
     setRunning(false)
     io.disconnect()
     ro.disconnect()
