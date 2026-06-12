@@ -18,12 +18,12 @@ groups:
 
   - title: Backend & Distributed Systems
     items:
+      - Real-time WebSockets
+      - Rate limiting & backpressure
+      - Fault tolerance & retries
+      - Concurrency & scheduling
       - REST APIs (chi, Fiber, FastAPI)
       - PostgreSQL
-      - Real-time WebSockets
-      - Concurrency & scheduling
-      - JWT & RBAC auth
-      - Embedded stores (SQLite)
 
   - title: AI-Augmented Development
     featured: true

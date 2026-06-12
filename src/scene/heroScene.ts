@@ -250,9 +250,23 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
       ctx.stroke()
     }
     if (live) {
-      sectionLabel(ctx, 'LAST EBAY POLL', 0, 'refreshes 60s')
+      sectionLabel(ctx, 'LAST EBAY POLL', 0)
       sectionLabel(ctx, 'SEARCHES', SECTION_H, `showing 14 of ${live.activeSearches}`)
       sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'last hour')
+      // operating signal: was the fleet fresh at the last refresh? An SLO,
+      // not a stray number — blue dot = healthy, grey = delayed. Stays in
+      // the one-accent palette (blue good, grey degraded).
+      const fresh = (live.secondsSinceLastPoll ?? 999) < 120
+      ctx.font = `500 11px ${MONO}`
+      const word = fresh ? 'healthy' : 'delayed'
+      ctx.fillStyle = fresh ? BRAND : SLATE
+      ctx.textAlign = 'right'
+      ctx.fillText(word, PANEL_W - PAD, 35)
+      const ww = ctx.measureText(word).width
+      ctx.textAlign = 'left'
+      ctx.beginPath()
+      ctx.arc(PANEL_W - PAD - ww - 9, 31.5, 3, 0, Math.PI * 2)
+      ctx.fill()
     } else {
       sectionLabel(ctx, 'REQUESTS / SEC', 0)
       sectionLabel(ctx, 'MONITORS', SECTION_H, 'showing 14 of 285')
@@ -261,15 +275,32 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
       // truth: the counter starts at zero when the page loads.
       sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'this session')
     }
-    // the page's real numbers are stamped and honest; the console says
-    // plainly which kind it is showing
-    ctx.fillStyle = SLATE
-    ctx.font = `400 10px ${MONO}`
-    ctx.letterSpacing = '0.5px'
-    ctx.textAlign = 'right'
-    ctx.fillText(live ? 'live · eSnipe production' : 'simulated feed', PANEL_W - PAD, PANEL_H - 13)
-    ctx.textAlign = 'left'
-    ctx.letterSpacing = '0px'
+    // provenance: the element that proves the feed is real should be among
+    // the most legible, not the least. Live gets a brand-dot + dark label;
+    // simulated stays quiet.
+    if (live) {
+      const cap = 'live · eSnipe production'
+      ctx.font = `500 11px ${MONO}`
+      ctx.letterSpacing = '0.3px'
+      ctx.textAlign = 'right'
+      ctx.fillStyle = INK
+      ctx.fillText(cap, PANEL_W - PAD, PANEL_H - 14)
+      const cw = ctx.measureText(cap).width
+      ctx.textAlign = 'left'
+      ctx.fillStyle = BRAND
+      ctx.beginPath()
+      ctx.arc(PANEL_W - PAD - cw - 11, PANEL_H - 18, 3.2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.letterSpacing = '0px'
+    } else {
+      ctx.fillStyle = SLATE
+      ctx.font = `400 10px ${MONO}`
+      ctx.letterSpacing = '0.5px'
+      ctx.textAlign = 'right'
+      ctx.fillText('simulated feed', PANEL_W - PAD, PANEL_H - 13)
+      ctx.textAlign = 'left'
+      ctx.letterSpacing = '0px'
+    }
     // alert grid placeholders
     ctx.strokeStyle = HAIRLINE
     for (let n = 0; n < CELL_COUNT; n++) {

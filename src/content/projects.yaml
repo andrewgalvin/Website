@@ -14,8 +14,8 @@ featured:
       A distributed monitoring platform that watched event inventory and
       alerted users to in-stock tickets in near real time. Concurrency
       controls, rate limiting, and fault-tolerant retries kept it reliable
-      while it processed around 50 million requests a day. Now retired,
-      but it opened the door to the work I do today.
+      while it processed around 50 million requests a day at peak. Now
+      retired, but it opened the door to the work I do today.
     tags:
       - Distributed systems
       - Concurrency
@@ -30,7 +30,7 @@ featured:
     body: >-
       An eBay monitoring and alerting platform serving 194 active users,
       with native iOS and Android apps and Discord alerts that land in
-      seconds. It tracks 285 searches a day, each polling on a user-chosen
+      seconds. It tracks 280+ active searches, each polling on a user-chosen
       cadence from every 5 seconds to every 60 minutes, and stays accurate
       inside strict external API limits.
     tags:
