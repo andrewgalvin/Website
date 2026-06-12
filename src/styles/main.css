@@ -48,6 +48,7 @@
   --faint: #67717f; /* AA on --bg even at small sizes */
   --hairline: #e3e8ee;
   --hairline-strong: #d3dbe4;
+  --input-border: #7e8a99; /* 3:1+ non-text contrast on white and --bg */
   --accent: #3d5a80; /* the original site's b'dazzled blue */
   --accent-deep: #2b4468;
   --accent-bright: #5b84b5; /* decorative uses only */
@@ -450,11 +451,10 @@ ol[role="list"] {
   margin-top: 1.5rem;
   max-width: 36rem;
   font-size: var(--step-2);
-  line-height: 1.45;
+  line-height: 1.5;
   font-weight: 500;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.01em;
   color: var(--ink-soft);
-  font-family: var(--font-display);
 }
 
 .hero-sub em {
@@ -501,6 +501,13 @@ ol[role="list"] {
   padding-top: 2rem;
   border-top: 1px solid var(--hairline);
   max-width: 46rem;
+}
+
+.stat {
+  /* dt comes first in the DOM for valid <dl> order; the number renders on top */
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
 }
 
 .stat dd {
@@ -694,13 +701,6 @@ ol[role="list"] {
 .skill-group li:hover {
   color: var(--ink);
   border-bottom-color: var(--hairline-strong);
-}
-
-.skill-note {
-  margin-top: 0.8rem;
-  font-size: 0.85rem;
-  line-height: 1.55;
-  color: var(--muted);
 }
 
 @media (max-width: 56rem) {
@@ -1149,7 +1149,7 @@ ol[role="list"] {
   width: 100%;
   padding: 0.68rem 0.85rem;
   border-radius: 8px;
-  border: 1px solid var(--hairline-strong);
+  border: 1px solid var(--input-border);
   background: var(--bg);
   color: var(--ink);
   font: inherit;

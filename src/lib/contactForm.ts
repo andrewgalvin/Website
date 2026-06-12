@@ -18,6 +18,7 @@ export function initContactForm(): void {
 
   const status = form.querySelector<HTMLElement>('.form-status')
   const submit = form.querySelector<HTMLButtonElement>('.form-submit')
+  const readyAt = Date.now()
 
   const setStatus = (message: string, kind?: 'success' | 'error') => {
     if (!status) return
@@ -37,17 +38,22 @@ export function initContactForm(): void {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
+    if (submit?.hasAttribute('disabled')) return
 
     const data = new FormData(form)
     const value = (name: string) => String(data.get(name) ?? '').trim()
 
-    // honeypot: bots fill it, humans can't see it — quietly drop the message
-    if (value('website') !== '') {
+    // Honeypot, time-gated: only a submission that BOTH filled the hidden
+    // field AND arrived implausibly fast is treated as a bot. A password
+    // manager autofilling the field on a human's submit sails through, so a
+    // real message can never be silently dropped.
+    if (value('website') !== '' && Date.now() - readyAt < 3000) {
       form.reset()
       setStatus('Thanks! Your message is on its way.', 'success')
       return
     }
 
+    let firstInvalid: HTMLElement | null = null
     let firstProblem: string | null = null
     for (const name of requiredFields) {
       const field = form.elements.namedItem(name)
@@ -55,7 +61,13 @@ export function initContactForm(): void {
       const missing = value(name) === ''
       const invalid = missing || !field.checkValidity()
       field.classList.toggle('is-invalid', invalid)
+      if (invalid) {
+        field.setAttribute('aria-invalid', 'true')
+      } else {
+        field.removeAttribute('aria-invalid')
+      }
       if (invalid && !firstProblem) {
+        firstInvalid = field
         firstProblem = missing
           ? `Please fill in your ${labels[name]}.`
           : `Please enter a valid ${labels[name]}.`
@@ -63,6 +75,7 @@ export function initContactForm(): void {
     }
     if (firstProblem) {
       setStatus(firstProblem, 'error')
+      firstInvalid?.focus()
       return
     }
 
@@ -73,6 +86,8 @@ export function initContactForm(): void {
       const res = await fetch(EMAILJS_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // a hung connection should fail visibly, not spin forever
+        signal: AbortSignal.timeout(10_000),
         body: JSON.stringify({
           service_id: EMAILJS_SERVICE_ID,
           template_id: EMAILJS_TEMPLATE_ID,
@@ -96,10 +111,11 @@ export function initContactForm(): void {
     }
   })
 
-  // clear the error highlight as soon as the visitor starts fixing a field
+  // clear the error state as soon as the visitor starts fixing a field
   form.addEventListener('input', (e) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
       e.target.classList.remove('is-invalid')
+      e.target.removeAttribute('aria-invalid')
     }
   })
 }

@@ -46,9 +46,10 @@ src/lib/contactForm.ts  EmailJS submission + validation
 ## Performance & accessibility notes
 
 - The Three.js chunk loads on `requestIdleCallback`; the page is fully usable
-  before (and without) it. No WebGL → the CSS gradient backdrop stays.
+  before (and without) it. No WebGL → the canvas is removed and the hero
+  stays typographic.
 - The render loop pauses when the tab is hidden or the hero scrolls offscreen;
-  pixel ratio is capped (2 desktop / 1.5 mobile).
+  pixel ratio is capped at 2.
 - Fonts are self-hosted variable woff2 latin subsets (preloaded); the page
   makes zero third-party requests.
 - `prefers-reduced-motion` disables GSAP animations and the 3D render loop

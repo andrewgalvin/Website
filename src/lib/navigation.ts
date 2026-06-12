@@ -1,7 +1,6 @@
 /**
  * Mobile menu open/close with the small a11y contract that goes with it:
- * aria-expanded stays truthful, Esc closes, focus returns to the toggle,
- * and the page behind the overlay stops scrolling.
+ * aria-expanded stays truthful, Esc closes, and focus returns to the toggle.
  */
 export function initNavigation(): void {
   const toggle = document.querySelector<HTMLButtonElement>('.nav-toggle')

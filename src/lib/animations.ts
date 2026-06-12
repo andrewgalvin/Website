@@ -3,7 +3,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const SECTION_IDS = ['about', 'skills', 'experience', 'projects', 'education', 'contact']
+const SECTION_IDS = ['about', 'projects', 'skills', 'experience', 'education', 'contact']
 
 const counterParts = (el: HTMLElement) => ({
   target: Number.parseFloat(el.dataset.count ?? '0'),
@@ -19,6 +19,33 @@ const counterFinalText = (el: HTMLElement) => {
 export function initAnimations(): void {
   const counters = gsap.utils.toArray<HTMLElement>('[data-count]')
   const mm = gsap.matchMedia()
+
+  /* ---- UI state, not motion: runs regardless of motion preference ---- */
+
+  // header hairline once the page moves
+  ScrollTrigger.create({
+    start: 8,
+    end: 'max',
+    toggleClass: { className: 'is-scrolled', targets: '.site-header' },
+  })
+
+  // active nav link tracking
+  const navLinks = new Map<string, HTMLElement>()
+  document.querySelectorAll<HTMLElement>('[data-nav]').forEach((link) => {
+    const id = link.getAttribute('href')?.slice(1)
+    if (id) navLinks.set(id, link)
+  })
+  SECTION_IDS.forEach((id) => {
+    const section = document.getElementById(id)
+    const link = navLinks.get(id)
+    if (!section || !link) return
+    ScrollTrigger.create({
+      trigger: section,
+      start: 'top 55%',
+      end: 'bottom 45%',
+      onToggle: (self) => link.classList.toggle('is-active', self.isActive),
+    })
+  })
 
   // Reduced motion: no animation work at all — just make sure every number
   // shows its final value. Content is never hidden by CSS, so nothing else
@@ -46,39 +73,22 @@ export function initAnimations(): void {
 
 function setupMotion(mm: gsap.MatchMedia, counters: HTMLElement[]): void {
   mm.add('(prefers-reduced-motion: no-preference)', () => {
-    /* ---- hero: one quiet stagger ---- */
-    gsap.from('[data-hero]', {
+    /* ---- hero: one quiet stagger ----
+       The h1 is the LCP element, so it never animates opacity — a y-drift
+       only. Everything else fades up around it. */
+    gsap.from('.hero-title', {
+      y: 14,
+      duration: 0.85,
+      ease: 'power2.out',
+      delay: 0.1,
+    })
+    gsap.from('[data-hero]:not(.hero-title)', {
       autoAlpha: 0,
       y: 18,
       duration: 0.85,
       ease: 'power2.out',
       stagger: 0.1,
-      delay: 0.1,
-    })
-
-    /* ---- header hairline once the page moves ---- */
-    ScrollTrigger.create({
-      start: 8,
-      end: 'max',
-      toggleClass: { className: 'is-scrolled', targets: '.site-header' },
-    })
-
-    /* ---- active nav link tracking ---- */
-    const navLinks = new Map<string, HTMLElement>()
-    document.querySelectorAll<HTMLElement>('[data-nav]').forEach((link) => {
-      const id = link.getAttribute('href')?.slice(1)
-      if (id) navLinks.set(id, link)
-    })
-    SECTION_IDS.forEach((id) => {
-      const section = document.getElementById(id)
-      const link = navLinks.get(id)
-      if (!section || !link) return
-      ScrollTrigger.create({
-        trigger: section,
-        start: 'top 55%',
-        end: 'bottom 45%',
-        onToggle: (self) => link.classList.toggle('is-active', self.isActive),
-      })
+      delay: 0.15,
     })
 
     /* ---- soft reveals ---- */

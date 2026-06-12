@@ -7,7 +7,7 @@
     <title>Andrew Galvin · Senior Software Engineer</title>
     <meta
       name="description"
-      content="Andrew Galvin is a senior software engineer in Boston building scalable inventory systems and real-time market monitors for the live-events resale industry. He works AI-first and ships production software fast, with the tests to prove it."
+      content="Senior software engineer in Boston building scalable inventory systems and real-time market monitors for live-events resale. AI-first, with the tests to prove it."
     />
     <meta name="author" content="Andrew Galvin" />
     <meta name="theme-color" content="#f7f9fb" />
@@ -23,8 +23,10 @@
       content="Senior software engineer at Center Stage. Scalable systems, real-time market monitors, and an AI-first workflow. Built Ticket Monitor (50M requests/day at peak); runs eSnipe (194 active users)."
     />
     <meta property="og:image" content="https://www.andrewgalvin.net/og.png" />
+    <meta property="og:image:alt" content="Andrew Galvin — senior software engineer. Site hero with headline stats." />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Andrew Galvin · Senior Software Engineer" />
     <meta
@@ -34,6 +36,7 @@
     <meta name="twitter:image" content="https://www.andrewgalvin.net/og.png" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
@@ -101,11 +104,11 @@
         </button>
 
         <div class="nav-menu" id="site-menu">
-          <ul class="nav-links">
+          <ul class="nav-links" role="list">
             <li><a href="#about" data-nav>About</a></li>
+            <li><a href="#projects" data-nav>Projects</a></li>
             <li><a href="#skills" data-nav>Skills</a></li>
             <li><a href="#experience" data-nav>Experience</a></li>
-            <li><a href="#projects" data-nav>Projects</a></li>
             <li><a href="#education" data-nav>Education</a></li>
             <li><a href="#contact" data-nav>Contact</a></li>
             <li>
@@ -156,16 +159,16 @@
 
           <dl class="hero-stats" data-hero>
             <div class="stat">
-              <dd><span data-count="50" data-count-suffix="M">50M</span></dd>
               <dt>requests a day Ticket Monitor handled at peak</dt>
+              <dd><span data-count="50" data-count-suffix="M">50M</span></dd>
             </div>
             <div class="stat">
-              <dd><span data-count="194">194</span></dd>
               <dt>active users on eSnipe today</dt>
+              <dd><span data-count="194">194</span></dd>
             </div>
             <div class="stat">
-              <dd><span data-count="4.0" data-count-decimals="1">4.0</span></dd>
-              <dt>GPA, M.S. Applied Computer Science</dt>
+              <dt>searches eSnipe monitors around the clock</dt>
+              <dd><span data-count="285">285</span></dd>
             </div>
           </dl>
         </div>
@@ -185,11 +188,10 @@
               </p>
               <p>
                 My own projects taught me production the hard way. Ticket
-                Monitor processed <strong>around 50M requests a day</strong> before
-                I retired it, and it's a big part of how I landed this job.
-                eSnipe is live on web, iOS, and Android:
-                <strong>194 active users</strong>, 285 searches monitored
-                daily.
+                Monitor ran at a scale where concurrency, rate limiting, and
+                retries stopped being theory, and it's a big part of how I
+                landed this job. eSnipe is live today on web, iOS, and
+                Android, and still growing.
               </p>
               <p>
                 I work AI-first. Claude, Cursor, Codex, and ChatGPT are in my
@@ -199,8 +201,8 @@
                 quality and testability non-negotiable.
               </p>
               <p>
-                Before this I spent three years at Fidelity on internal
-                deployment platforms, often as de facto tech lead. M.S. in
+                Before this I was at Fidelity, building internal deployment
+                platforms and often acting as de facto tech lead. M.S. in
                 Applied Computer Science (AI/ML, 4.0 GPA) from Wentworth. Off
                 the clock: portrait photography.
               </p>
@@ -259,175 +261,6 @@
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      <!-- ============================ SKILLS ============================ -->
-      <section class="section" id="skills" aria-labelledby="skills-title">
-        <div class="container">
-          <h2 class="section-title" id="skills-title">Skills</h2>
-
-          <div class="skills-grid" data-reveal-group>
-            <div class="skill-group">
-              <h3>Languages</h3>
-              <ul role="list">
-                <li>Go</li>
-                <li>Python</li>
-                <li>Java</li>
-                <li>TypeScript</li>
-                <li>JavaScript</li>
-                <li>SQL</li>
-              </ul>
-            </div>
-
-            <div class="skill-group">
-              <h3>Backend &amp; Platform</h3>
-              <ul role="list">
-                <li>Node.js</li>
-                <li>REST APIs</li>
-                <li>PostgreSQL</li>
-                <li>AWS</li>
-                <li>Docker</li>
-                <li>CI/CD</li>
-              </ul>
-            </div>
-
-            <div class="skill-group skill-group-featured">
-              <h3>AI-Augmented Development</h3>
-              <ul role="list">
-                <li>Claude</li>
-                <li>Cursor</li>
-                <li>Codex</li>
-                <li>ChatGPT</li>
-                <li>LLM integration</li>
-                <li>Local models (Ollama)</li>
-                <li>AI-assisted testing</li>
-                <li>AI code review</li>
-              </ul>
-              <p class="skill-note">
-                Daily drivers for rapid development, paired with the review
-                rigor and test coverage that keep it production-grade.
-              </p>
-            </div>
-
-            <div class="skill-group">
-              <h3>Product &amp; Practice</h3>
-              <ul role="list">
-                <li>React</li>
-                <li>Angular</li>
-                <li>Electron</li>
-                <li>Stripe</li>
-                <li>System design</li>
-                <li>Testing strategy</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============================ EXPERIENCE ============================ -->
-      <section class="section" id="experience" aria-labelledby="experience-title">
-        <div class="container">
-          <h2 class="section-title" id="experience-title">Experience</h2>
-
-          <ol class="timeline" role="list">
-            <li class="timeline-item" data-reveal>
-              <p class="timeline-dates">2026 – Present</p>
-              <div class="timeline-body">
-                <h3>Senior Software Engineer</h3>
-                <p class="timeline-org">Center Stage, LLC</p>
-                <ul class="timeline-bullets">
-                  <li>
-                    Architect the fleet of Go services behind inventory
-                    management for a high-volume ticket-resale operation.
-                  </li>
-                  <li>
-                    Design real-time market monitors that turn noisy
-                    marketplace data into buying signal: what to buy, where,
-                    and when.
-                  </li>
-                  <li>
-                    Ship rapidly with an AI-first workflow (Claude, Cursor,
-                    Codex) and build LLM-powered internal tooling, holding the
-                    line on code quality and testability.
-                  </li>
-                  <li>
-                    Own platform work end to end: design, build, deploy,
-                    operate. The interesting details are proprietary, but I'm
-                    happy to talk at a high level.
-                  </li>
-                </ul>
-                <ul class="role-tags" role="list">
-                  <li>Go</li>
-                  <li>Microservices</li>
-                  <li>LLM tooling</li>
-                </ul>
-              </div>
-            </li>
-
-            <li class="timeline-item" data-reveal>
-              <p class="timeline-dates">Jan 2025 – 2026</p>
-              <div class="timeline-body">
-                <h3>Software Engineer</h3>
-                <p class="timeline-org">Fidelity · Boston, MA</p>
-                <ul class="timeline-bullets">
-                  <li>
-                    Led the design and build of internal platforms that
-                    streamline production deployments.
-                  </li>
-                  <li>
-                    Acted as de facto technical lead through team transitions:
-                    guiding system design, mentoring through code review, and
-                    keeping multi-service initiatives delivering.
-                  </li>
-                  <li>
-                    Resolved production issues with root-cause analysis and
-                    durable fixes; a regular voice in cross-team architecture
-                    discussions.
-                  </li>
-                </ul>
-                <ul class="role-tags" role="list">
-                  <li>Java</li>
-                  <li>Deployment platforms</li>
-                  <li>Root-cause analysis</li>
-                </ul>
-              </div>
-            </li>
-
-            <li class="timeline-item" data-reveal>
-              <p class="timeline-dates">Jun 2023 – Dec 2024</p>
-              <div class="timeline-body">
-                <h3>Associate Software Engineer</h3>
-                <p class="timeline-org">Fidelity · Boston, MA</p>
-                <ul class="timeline-bullets">
-                  <li>
-                    Implemented CI/CD pipelines for Java and Python services:
-                    reusable, documented foundations adopted by later projects.
-                  </li>
-                  <li>
-                    Standardized build enforcement and dependency management
-                    across teams; owned role-based access configuration,
-                    service upgrades, and cross-system integrations.
-                  </li>
-                  <li>
-                    Strengthened acceptance and component testing strategy
-                    while promoting a design-first mindset in reviews.
-                  </li>
-                </ul>
-                <ul class="role-tags" role="list">
-                  <li>Java</li>
-                  <li>Python</li>
-                  <li>CI/CD</li>
-                </ul>
-              </div>
-            </li>
-          </ol>
-
-          <p class="experience-resume" data-reveal>
-            <a href="/Andrew-Galvin-Resume.pdf" target="_blank" rel="noopener">
-              View full résumé ↗
-            </a>
-          </p>
         </div>
       </section>
 
@@ -529,6 +362,171 @@
         </div>
       </section>
 
+      <!-- ============================ SKILLS ============================ -->
+      <section class="section" id="skills" aria-labelledby="skills-title">
+        <div class="container">
+          <h2 class="section-title" id="skills-title">Skills</h2>
+
+          <div class="skills-grid" data-reveal-group>
+            <div class="skill-group">
+              <h3>Languages</h3>
+              <ul role="list">
+                <li>Go</li>
+                <li>Python</li>
+                <li>Java</li>
+                <li>TypeScript</li>
+                <li>JavaScript</li>
+                <li>SQL</li>
+              </ul>
+            </div>
+
+            <div class="skill-group">
+              <h3>Backend &amp; Platform</h3>
+              <ul role="list">
+                <li>Node.js</li>
+                <li>REST APIs</li>
+                <li>PostgreSQL</li>
+                <li>AWS</li>
+                <li>Docker</li>
+                <li>CI/CD</li>
+              </ul>
+            </div>
+
+            <div class="skill-group skill-group-featured">
+              <h3>AI-Augmented Development</h3>
+              <ul role="list">
+                <li>Claude</li>
+                <li>Cursor</li>
+                <li>Codex</li>
+                <li>ChatGPT</li>
+                <li>LLM integration</li>
+                <li>Local models (Ollama)</li>
+                <li>AI-assisted testing</li>
+                <li>AI code review</li>
+              </ul>
+            </div>
+
+            <div class="skill-group">
+              <h3>Product &amp; Practice</h3>
+              <ul role="list">
+                <li>React</li>
+                <li>Angular</li>
+                <li>Electron</li>
+                <li>Stripe</li>
+                <li>System design</li>
+                <li>Testing strategy</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ EXPERIENCE ============================ -->
+      <section class="section" id="experience" aria-labelledby="experience-title">
+        <div class="container">
+          <h2 class="section-title" id="experience-title">Experience</h2>
+
+          <ol class="timeline" role="list">
+            <li class="timeline-item" data-reveal>
+              <p class="timeline-dates">2026 – Present</p>
+              <div class="timeline-body">
+                <h3>Senior Software Engineer</h3>
+                <p class="timeline-org">Center Stage, LLC</p>
+                <ul class="timeline-bullets">
+                  <li>
+                    Architect the fleet of Go services behind inventory
+                    management for a high-volume ticket-resale operation.
+                  </li>
+                  <li>
+                    Design real-time market monitors that turn noisy
+                    marketplace data into buying signal: what to buy, where,
+                    and when.
+                  </li>
+                  <li>
+                    Ship rapidly with an AI-first workflow and build
+                    LLM-powered internal tooling, holding the line on code
+                    quality and testability.
+                  </li>
+                  <li>
+                    Own platform work end to end: design, build, deploy,
+                    operate. The interesting details are proprietary, but I'm
+                    happy to talk at a high level.
+                  </li>
+                </ul>
+                <ul class="role-tags" role="list">
+                  <li>Go</li>
+                  <li>Microservices</li>
+                  <li>LLM tooling</li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="timeline-item" data-reveal>
+              <p class="timeline-dates">Jan 2025 – 2026</p>
+              <div class="timeline-body">
+                <h3>Software Engineer</h3>
+                <p class="timeline-org">Fidelity · Boston, MA</p>
+                <ul class="timeline-bullets">
+                  <li>
+                    Led the design and build of internal platforms that
+                    streamline production deployments.
+                  </li>
+                  <li>
+                    Acted as de facto technical lead through team transitions:
+                    guiding system design, mentoring through code review, and
+                    keeping multi-service initiatives delivering.
+                  </li>
+                  <li>
+                    Resolved production issues with root-cause analysis and
+                    durable fixes; a regular voice in cross-team architecture
+                    discussions.
+                  </li>
+                </ul>
+                <ul class="role-tags" role="list">
+                  <li>Java</li>
+                  <li>Deployment platforms</li>
+                  <li>Root-cause analysis</li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="timeline-item" data-reveal>
+              <p class="timeline-dates">Jun 2023 – Dec 2024</p>
+              <div class="timeline-body">
+                <h3>Associate Software Engineer</h3>
+                <p class="timeline-org">Fidelity · Boston, MA</p>
+                <ul class="timeline-bullets">
+                  <li>
+                    Implemented CI/CD pipelines for Java and Python services:
+                    reusable, documented foundations adopted by later projects.
+                  </li>
+                  <li>
+                    Standardized build enforcement and dependency management
+                    across teams; owned role-based access configuration,
+                    service upgrades, and cross-system integrations.
+                  </li>
+                  <li>
+                    Strengthened acceptance and component testing strategy
+                    while promoting a design-first mindset in reviews.
+                  </li>
+                </ul>
+                <ul class="role-tags" role="list">
+                  <li>Java</li>
+                  <li>Python</li>
+                  <li>CI/CD</li>
+                </ul>
+              </div>
+            </li>
+          </ol>
+
+          <p class="experience-resume" data-reveal>
+            <a href="/Andrew-Galvin-Resume.pdf" target="_blank" rel="noopener">
+              View full résumé ↗
+            </a>
+          </p>
+        </div>
+      </section>
+
       <!-- ============================ EDUCATION ============================ -->
       <section class="section" id="education" aria-labelledby="education-title">
         <div class="container">
@@ -541,8 +539,7 @@
               <p class="education-school">Wentworth Institute of Technology</p>
               <p class="education-detail">
                 4.0 GPA · Concentration in Artificial Intelligence &amp;
-                Machine Learning. Coursework: Classical AI, Modern Computing,
-                Machine Learning.
+                Machine Learning
               </p>
             </article>
 
@@ -552,8 +549,7 @@
               <p class="education-school">Wentworth Institute of Technology</p>
               <p class="education-detail">
                 3.6 GPA · Minor in Applied Mathematics · Dean's List every
-                semester. Coursework: Data Structures, Algorithms, Data
-                Science, Discrete Math.
+                semester
               </p>
             </article>
           </div>
@@ -614,7 +610,6 @@
                 <textarea id="cf-message" name="message" rows="5" required></textarea>
               </div>
 
-              <!-- spam honeypot: humans never see or fill this -->
               <div class="form-field hp-field" aria-hidden="true">
                 <label for="cf-website">Website</label>
                 <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off" />
