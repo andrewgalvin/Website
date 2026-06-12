@@ -56,3 +56,5 @@ src/lib/contactForm.ts  EmailJS submission + validation
 - Content is never hidden by CSS awaiting JavaScript — reveals are
   JS-applied, so a broken script can't blank the page.
 - Update the resume by replacing `public/Andrew-Galvin-Resume.pdf`.
+- Add a portrait by dropping `public/portrait.jpg` (4:5 crop, ~800px wide)
+  and uncommenting the `about-photo` figure in `index.html`.

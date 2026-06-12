@@ -579,6 +579,19 @@ ol[role="list"] {
   color: var(--ink-soft);
 }
 
+.about-photo {
+  margin: 0 0 1.6rem;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+}
+
+.about-photo img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
 .about-facts dl {
   display: grid;
 }
@@ -795,6 +808,33 @@ ol[role="list"] {
 
   .timeline-dates {
     padding-top: 0;
+  }
+}
+
+.experience-resume {
+  margin-top: 2.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.experience-resume a {
+  display: inline-block;
+  color: var(--accent);
+  text-decoration: none;
+  /* enlarge the touch target without shifting the visual layout */
+  padding-block: 0.6rem;
+  margin-block: -0.6rem;
+}
+
+.experience-resume a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+@media (min-width: 48rem) {
+  .experience-resume {
+    /* align with the timeline body column */
+    padding-left: 13.5rem;
   }
 }
 
