@@ -10,7 +10,7 @@ const EMAILJS_TEMPLATE_ID = 'template_dot2nfc'
 const EMAILJS_PUBLIC_KEY = 'user_rqdP5rFOtwU0LAcueNtOr'
 
 const FALLBACK_MESSAGE =
-  'Something went wrong. Please email me directly at andrewggalvin@gmail.com.'
+  'Something went wrong. Please email me directly at andrew@andrewgalvin.dev.'
 
 export function initContactForm(): void {
   const form = document.getElementById('contact-form')
