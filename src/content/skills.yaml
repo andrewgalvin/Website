@@ -10,9 +10,11 @@ groups:
       - Go
       - TypeScript
       - Python
+      # 3.5 years of production Java at Fidelity, even if the personal
+      # repos since are Go/TS/Python
+      - Java
       - SQL
       - React
-      - Swift
 
   - title: Backend & Distributed Systems
     items:
