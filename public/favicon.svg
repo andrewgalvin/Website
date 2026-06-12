@@ -6,6 +6,6 @@
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="14" fill="url(#bg)"/>
-  <circle cx="50" cy="14" r="3.5" fill="#98c1d9"/>
+  <rect x="46.5" y="10.5" width="7" height="7" rx="1.5" fill="#98c1d9"/>
   <text x="32" y="43" font-family="ui-monospace, Menlo, monospace" font-size="25" font-weight="700" fill="#e0fbfc" text-anchor="middle" letter-spacing="-1">AG</text>
 </svg>
