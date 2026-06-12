@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
+import { SITE } from '@/content'
 
 /**
  * Contact form → Netlify Forms (replaced EmailJS in June 2026 after its
@@ -7,9 +8,6 @@ import type { FormEvent } from 'react'
  * deploy-time registration form lives in index.html; this component posts
  * the same field names to "/" and Netlify routes the submission.
  */
-
-const FALLBACK_MESSAGE =
-  'Something went wrong. Please email me directly at andrew@andrewgalvin.dev.'
 
 const REQUIRED_FIELDS = ['name', 'email', 'message'] as const
 type RequiredField = (typeof REQUIRED_FIELDS)[number]
@@ -92,7 +90,10 @@ export function ContactForm() {
       form.reset()
       setStatus({ message: "Thanks! Your message is on its way. I'll get back to you soon.", kind: 'success' })
     } catch {
-      setStatus({ message: FALLBACK_MESSAGE, kind: 'error' })
+      setStatus({
+        message: `Something went wrong. Please email me directly at ${SITE.identity.email}.`,
+        kind: 'error',
+      })
     } finally {
       setSending(false)
     }

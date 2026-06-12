@@ -1,0 +1,27 @@
+# Site-wide identity and navigation. Identity values are single-source:
+# the React tree reads them at runtime, and vite.config.ts injects them
+# into the static parts of index.html (JSON-LD, noscript) at build time.
+
+identity:
+  name: Andrew Galvin
+  email: andrew@andrewgalvin.dev
+  phone:
+    display: (781) 927-5667
+    e164: "+17819275667"
+  location: Weymouth / Boston, MA
+  github:
+    label: andrewgalvin
+    url: https://github.com/andrewgalvin
+  linkedin:
+    label: andrew-galvin-0000001
+    url: https://www.linkedin.com/in/andrew-galvin-0000001/
+  resume: /Andrew-Galvin-Resume.pdf
+  source: https://github.com/andrewgalvin/Website
+
+# Menu order. Each href must match a section id rendered in App.tsx.
+nav:
+  - { label: About, href: "#about" }
+  - { label: Projects, href: "#projects" }
+  - { label: Experience, href: "#experience" }
+  - { label: Skills, href: "#skills" }
+  - { label: Contact, href: "#contact" }

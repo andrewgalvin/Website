@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-
-const NAV_ITEMS = [
-  ['#about', 'About'],
-  ['#projects', 'Projects'],
-  ['#experience', 'Experience'],
-  ['#skills', 'Skills'],
-  ['#contact', 'Contact'],
-] as const
+import { SITE } from '@/content'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 /**
  * Mobile menu open/close with the small a11y contract that goes with it:
@@ -16,6 +10,7 @@ export function Header() {
   const [open, setOpen] = useState(false)
   const toggleRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const wide = useMediaQuery('(min-width: 56rem)')
 
   // opening hands focus to the first link in the menu
   useEffect(() => {
@@ -35,18 +30,13 @@ export function Header() {
 
   // leaving the mobile breakpoint clears any leftover overlay state
   useEffect(() => {
-    const wide = matchMedia('(min-width: 56rem)')
-    const onChange = (e: MediaQueryListEvent) => {
-      if (e.matches) setOpen(false)
-    }
-    wide.addEventListener('change', onChange)
-    return () => wide.removeEventListener('change', onChange)
-  }, [])
+    if (wide) setOpen(false)
+  }, [wide])
 
   return (
     <header className="site-header">
       <nav className="container site-nav" aria-label="Primary">
-        <a className="brand" href="#top">Andrew Galvin</a>
+        <a className="brand" href="#top">{SITE.identity.name}</a>
 
         <button
           ref={toggleRef}
@@ -68,13 +58,13 @@ export function Header() {
           }}
         >
           <ul className="nav-links" role="list">
-            {NAV_ITEMS.map(([href, label]) => (
+            {SITE.nav.map(({ href, label }) => (
               <li key={href}>
                 <a href={href} data-nav>{label}</a>
               </li>
             ))}
             <li>
-              <a className="nav-resume" href="/Andrew-Galvin-Resume.pdf" target="_blank" rel="noopener">
+              <a className="nav-resume" href={SITE.identity.resume} target="_blank" rel="noopener">
                 Résumé
               </a>
             </li>

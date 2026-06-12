@@ -1,61 +1,56 @@
 import { useEffect, useRef, useState } from 'react'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 /**
  * The Three.js scene is a progressive enhancement: it lives in its own lazy
  * chunk, loads at browser idle, and only on viewports wide enough to show it
  * (the canvas is display:none below 64rem, so phones never pay for the
  * download). If WebGL is unavailable the hero simply stays typographic.
+ *
+ * Once loaded, the scene stays mounted across breakpoint changes (CSS hides
+ * the canvas when narrow) and is disposed only on unmount.
  */
 export function HeroScene() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const sceneRef = useRef<{ loaded: boolean; dispose?: () => void }>({ loaded: false })
   const [failed, setFailed] = useState(false)
+  const wide = useMediaQuery('(min-width: 64rem)')
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || !wide || failed || sceneRef.current.loaded) return
 
     let cancelled = false
-    let dispose: (() => void) | undefined
     let idleId: number | undefined
     let timeoutId: number | undefined
 
     const start = () => {
-      import('../scene/heroScene')
+      import('@/scene/heroScene')
         .then(({ initHeroScene }) => {
           if (cancelled) return
-          dispose = initHeroScene(canvas)
+          sceneRef.current.loaded = true
+          sceneRef.current.dispose = initHeroScene(canvas)
         })
         .catch(() => setFailed(true))
     }
-    const schedule = () => {
-      if (typeof requestIdleCallback === 'function') {
-        idleId = requestIdleCallback(start, { timeout: 1500 })
-      } else {
-        timeoutId = setTimeout(start, 300)
-      }
-    }
-
-    const wide = matchMedia('(min-width: 64rem)')
-    // if the viewport later grows past the breakpoint, load the scene then
-    const onChange = (e: MediaQueryListEvent) => {
-      if (!e.matches) return
-      wide.removeEventListener('change', onChange)
-      schedule()
-    }
-    if (wide.matches) {
-      schedule()
+    if (typeof requestIdleCallback === 'function') {
+      idleId = requestIdleCallback(start, { timeout: 1500 })
     } else {
-      wide.addEventListener('change', onChange)
+      timeoutId = setTimeout(start, 300)
     }
 
     return () => {
       cancelled = true
-      wide.removeEventListener('change', onChange)
       if (idleId !== undefined) cancelIdleCallback(idleId)
       if (timeoutId !== undefined) clearTimeout(timeoutId)
-      dispose?.()
     }
-  }, [failed])
+  }, [wide, failed])
+
+  // dispose the renderer only when the component actually unmounts
+  useEffect(() => {
+    const scene = sceneRef.current
+    return () => scene.dispose?.()
+  }, [])
 
   return (
     <div className="hero-scene" aria-hidden="true">

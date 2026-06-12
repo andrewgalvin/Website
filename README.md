@@ -6,6 +6,7 @@ development workflow.
 
 Rebuilt from the ground up in 2026 (previously Create React App + Material-UI)
 as a clean, minimal, light design, then migrated to React 19 later that year.
+All copy lives in YAML under `src/content/` — components are pure renderers.
 Head metadata (meta/OG/JSON-LD) stays static in `index.html` so crawlers and
 link unfurlers never depend on JavaScript; the page body is a React tree. The
 3D hero accent is a lazy-loaded progressive enhancement that phones never
@@ -15,8 +16,9 @@ download (the canvas is hidden below 64rem).
 
 | Layer      | Choice                                                       |
 | ---------- | ------------------------------------------------------------ |
-| Build      | [Vite](https://vite.dev) + TypeScript (strict)               |
+| Build      | [Vite](https://vite.dev) + TypeScript (strict, project refs) |
 | UI         | [React 19](https://react.dev) — function components + hooks  |
+| Content    | YAML via `@rollup/plugin-yaml`, typed in `content/types.ts`  |
 | 3D hero    | [Three.js](https://threejs.org) — lazy-loaded chunk          |
 | Animation  | [GSAP](https://gsap.com) + ScrollTrigger                     |
 | Styling    | Hand-rolled CSS custom-property design system                |
@@ -34,15 +36,52 @@ npm run preview    # serve the production build locally
 ## Structure
 
 ```
-index.html              meta/OG/JSON-LD, React root, Netlify form registration
-public/                 favicon, resume PDF, robots.txt, sitemap.xml
-src/main.tsx            entry — mounts <App />
-src/App.tsx             page composition + GSAP animation lifecycle
-src/components/         one component per section; ContactForm owns submission
-src/styles/main.css     design tokens + component styles
-src/scene/heroScene.ts  Three.js network-graph hero (own chunk, framework-free)
-src/lib/animations.ts   GSAP scroll animations & microinteractions
+index.html                  static head (meta/OG/JSON-LD), React root,
+                            Netlify form registration
+public/                     favicon, resume PDF, robots.txt, sitemap.xml
+src/
+  main.tsx                  entry — mounts <App />
+  App.tsx                   page composition + GSAP animation lifecycle
+  content/                  ALL site copy, as YAML + the types that gate it
+    types.ts                content interfaces
+    index.ts                typed exports (the only place YAML is cast)
+    site.yaml               identity (email/phone/links) + nav
+    hero.yaml … contact.yaml  one file per section
+  components/
+    layout/                 Header, Footer
+    sections/               one component per page section
+    ui/                     small shared primitives (Icon)
+  hooks/                    useMediaQuery
+  lib/                      animations (GSAP), emphasis (inline *em* markers)
+  scene/heroScene.ts        Three.js network-graph hero (own chunk)
+  styles/main.css           design tokens + component styles
 ```
+
+Imports use the `@/` alias for `src/` (wired in `vite.config.ts` and
+`tsconfig.app.json`).
+
+## Editing content
+
+Everything a visitor reads is YAML in `src/content/` — no JSX edits needed:
+
+- **Add/remove a project**: edit `projects.yaml`. Featured projects take
+  `kicker/title/body/tags/figure` (+ optional `links`); archive entries take
+  `title/body` plus either a `link` or a `note` badge. Order in the file is
+  display order.
+- **Experience, skills, about, hero**: same idea in their files; timeline
+  roles use `bullets` + `tags`, education entries use `detail`.
+- **Identity (email, phone, profiles, résumé path)**: change once in
+  `site.yaml`. The React tree reads it at runtime and `vite.config.ts`
+  injects the same values into the static `index.html` (JSON-LD + noscript)
+  at build time, so there is exactly one source of truth.
+- In `hero.yaml`'s `sub`, `*single asterisks*` render as `<em>`.
+- Section ids (`#about`, `#projects`, …) are owned by the section components;
+  `nav` hrefs in `site.yaml` must match them.
+
+Two guards keep edits safe: `content/types.ts` types every field where
+components consume it, and a build-time validator in `vite.config.ts` checks
+the YAML itself — a missing required field fails `npm run build` with the
+file, entry index, and field named, instead of rendering blank.
 
 ## Contact form
 
@@ -67,6 +106,9 @@ fallback by design.
   (a single static frame is drawn instead).
 - The body renders client-side; a `noscript` notice with direct contact info
   covers JS-off visitors, and all SEO-relevant metadata is static HTML.
+- GSAP hooks onto `data-hero`, `data-reveal`, `data-reveal-group`, and
+  `data-count` attributes — keep them when restyling sections.
 - Update the resume by replacing `public/Andrew-Galvin-Resume.pdf`.
 - Add a portrait by dropping `public/portrait.jpg` (4:5 crop, ~800px wide)
-  and uncommenting the `about-photo` figure in `src/components/About.tsx`.
+  and uncommenting the `about-photo` figure in
+  `src/components/sections/About.tsx`.

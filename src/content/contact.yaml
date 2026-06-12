@@ -1,0 +1,10 @@
+# Contact section copy. The channel list (email, phone, LinkedIn, GitHub,
+# base) renders from identity in site.yaml — edit values there.
+
+title: Contact
+
+lead: Let's build something reliable.
+
+blurb: >-
+  Recruiting, collaborating, or just want to talk systems and AI-assisted
+  engineering? My inbox is open. I usually reply within a day.
