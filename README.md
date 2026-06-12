@@ -1,5 +1,7 @@
 # andrewgalvin.net
 
+[![CI](https://github.com/andrewgalvin/Website/actions/workflows/ci.yml/badge.svg)](https://github.com/andrewgalvin/Website/actions/workflows/ci.yml)
+
 Personal portfolio of **Andrew Galvin**, a senior software engineer in Boston
 building scalable systems and real-time market monitors with an AI-first
 development workflow.
@@ -31,13 +33,37 @@ npm install
 npm run dev        # dev server with HMR
 npm run build      # typecheck + production build to dist/
 npm run preview    # serve the production build locally
+npm test           # unit tests, then BDD end-to-end
 ```
+
+## Testing
+
+Three layers, each catching what the one before it can't:
+
+| Layer        | Tool                                      | What it proves                                                            |
+| ------------ | ----------------------------------------- | ------------------------------------------------------------------------- |
+| Content gate | zod schemas, run at build                 | every YAML edit is shape-valid before it can ship                          |
+| Unit         | Vitest — `src/**/*.test.ts`               | pure logic: formatters, the emphasis parser, the form's wire contract, and the schema guard rails themselves |
+| Behavior     | Gherkin + [playwright-bdd](https://vitalets.github.io/playwright-bdd/) — `features/` | real-browser scenarios: navigation a11y, content-to-page fidelity, every contact-form outcome including the honeypot |
+
+```sh
+npm run test:unit  # Vitest, ~200ms
+npm run test:e2e   # builds, generates specs from features/, runs Playwright
+```
+
+The scenarios in `features/*.feature` are plain Gherkin; their step
+definitions assert the page against the same YAML files and zod schemas the
+site renders from (`features/steps/content.ts`), so content and page cannot
+drift apart silently. Functional scenarios run on the site's reduced-motion
+path; motion gets its own scenarios. Everything runs on each push and pull
+request via GitHub Actions, with a Playwright trace uploaded on failure.
 
 ## Structure
 
 ```
 index.html                  static head (meta/OG/JSON-LD), React root,
                             Netlify form registration
+features/                   Gherkin scenarios + Playwright step definitions
 public/                     favicon, resume PDF, robots.txt, sitemap.xml
 src/
   main.tsx                  entry — mounts <App />
