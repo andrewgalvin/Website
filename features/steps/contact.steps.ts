@@ -2,7 +2,13 @@ import { expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
 import { Given, Then, When } from './fixtures'
 import { site } from './content'
-import { CONTACT_FORM_FIELDS, CONTACT_FORM_NAME } from '../../src/content/contactFields'
+import {
+  CONTACT_FORM_FIELDS,
+  EMAILJS_ENDPOINT,
+  EMAILJS_PUBLIC_KEY,
+  EMAILJS_SERVICE_ID,
+  EMAILJS_TEMPLATE_ID,
+} from '../../src/content/contactFields'
 
 const fillValidForm = async (page: Page) => {
   await page.locator('#cf-name').fill('Playwright Visitor')
@@ -14,32 +20,14 @@ const submit = async (page: Page) => {
   await page.locator('.contact-form .form-submit').click()
 }
 
-/* ---- endpoint doubles ---- */
+/* ---- endpoint doubles: never let a test hit the real EmailJS quota ---- */
 
 Given('the form endpoint will accept the submission', async ({ page }) => {
-  await page.route(
-    (url) => url.pathname === '/',
-    async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({ status: 200, body: '' })
-      } else {
-        await route.continue()
-      }
-    },
-  )
+  await page.route(EMAILJS_ENDPOINT, (route) => route.fulfill({ status: 200, body: 'OK' }))
 })
 
 Given('the form endpoint is unavailable', async ({ page }) => {
-  await page.route(
-    (url) => url.pathname === '/',
-    async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({ status: 503, body: '' })
-      } else {
-        await route.continue()
-      }
-    },
-  )
+  await page.route(EMAILJS_ENDPOINT, (route) => route.fulfill({ status: 503, body: '' }))
 })
 
 /* ---- actions ---- */
@@ -118,11 +106,22 @@ Then('I see a thank-you confirmation', async ({ page }) => {
 
 Then('the submission was posted with the registered field names', async ({ submissions }) => {
   expect(submissions.posts).toHaveLength(1)
-  const params = new URLSearchParams(submissions.posts[0].body)
-  expect(params.get('form-name')).toBe(CONTACT_FORM_NAME)
-  for (const field of CONTACT_FORM_FIELDS) {
-    expect(params.has(field.name), `field "${field.name}" missing from POST body`).toBe(true)
+  const payload = JSON.parse(submissions.posts[0].body) as {
+    service_id?: string
+    template_id?: string
+    user_id?: string
+    template_params?: Record<string, string>
   }
+  expect(payload.service_id).toBe(EMAILJS_SERVICE_ID)
+  expect(payload.template_id).toBe(EMAILJS_TEMPLATE_ID)
+  expect(payload.user_id).toBe(EMAILJS_PUBLIC_KEY)
+  for (const field of CONTACT_FORM_FIELDS.filter((f) => !f.honeypot)) {
+    expect(payload.template_params, `field "${field.name}" missing from payload`).toHaveProperty(
+      field.name,
+    )
+  }
+  // the honeypot is a client-side decision and never reaches the wire
+  expect(payload.template_params).not.toHaveProperty('website')
 })
 
 Then("I see an apology that includes Andrew's direct email address", async ({ page }) => {

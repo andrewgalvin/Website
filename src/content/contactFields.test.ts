@@ -1,14 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { CONTACT_FORM_FIELDS, CONTACT_FORM_NAME } from './contactFields'
+import {
+  CONTACT_FORM_FIELDS,
+  EMAILJS_ENDPOINT,
+  EMAILJS_PUBLIC_KEY,
+  EMAILJS_SERVICE_ID,
+  EMAILJS_TEMPLATE_ID,
+} from './contactFields'
 
 /**
  * This list is the wire contract between ContactForm.tsx (what the site
- * posts) and the hidden registration form vite.config.ts generates into
- * index.html (what Netlify provisions). These tests pin its invariants.
+ * posts to EmailJS) and the BDD scenarios that assert the payload. These
+ * tests pin its invariants.
  */
 describe('contact form wire format', () => {
-  it('names the form "contact"', () => {
-    expect(CONTACT_FORM_NAME).toBe('contact')
+  it('points at the EmailJS REST endpoint over https', () => {
+    expect(EMAILJS_ENDPOINT).toMatch(/^https:\/\/api\.emailjs\.com\//)
+  })
+
+  it('carries non-empty publishable identifiers', () => {
+    for (const id of [EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY]) {
+      expect(id.length).toBeGreaterThan(0)
+    }
   })
 
   it('declares exactly one honeypot field, called website', () => {
@@ -25,12 +37,6 @@ describe('contact form wire format', () => {
     const names = CONTACT_FORM_FIELDS.map((field) => field.name)
     for (const required of ['name', 'email', 'message']) {
       expect(names).toContain(required)
-    }
-  })
-
-  it('only uses input types the generated registration form can render', () => {
-    for (const field of CONTACT_FORM_FIELDS) {
-      expect(['text', 'email', 'textarea']).toContain(field.type)
     }
   })
 })
