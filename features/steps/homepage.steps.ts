@@ -36,8 +36,8 @@ Then('every resume link on the page points at the same PDF from site.yaml', asyn
   const hrefs = await page
     .locator('a[href$=".pdf"]')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
-  // header pill, hero button, experience footer — at minimum
-  expect(hrefs.length).toBeGreaterThanOrEqual(3)
+  // header pill and experience footer — at minimum
+  expect(hrefs.length).toBeGreaterThanOrEqual(2)
   for (const href of hrefs) {
     expect(href).toBe(site.identity.resume)
   }

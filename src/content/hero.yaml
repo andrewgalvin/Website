@@ -3,29 +3,24 @@
 eyebrow: Senior Software Engineer · Center Stage · Boston, MA
 title: Andrew Galvin
 sub: >-
-  I build *scalable systems* and *real-time market monitors* for the
-  live-events resale industry. I work AI-first and ship production
-  software fast, with the tests to prove it's right.
+  I build scalable systems and *real-time market monitors* for the
+  *live-events resale* industry. I work AI-first and ship production
+  software fast, with the tests to prove it.
 
-# "@resume" resolves to identity.resume from site.yaml, so the PDF path
-# lives in one place.
+# the nav already carries a résumé pill, so the hero keeps one CTA
 actions:
   - label: See my work
     href: "#projects"
     style: primary
-  - label: View résumé
-    href: "@resume"
-    style: ghost
-    external: true
 
 # value animates from 0; suffix is appended as-is (50 + M -> 50M).
 stats:
   - value: 50
     suffix: M
-    label: peak requests a day, Ticket Monitor
+    label: requests a day at peak, on Ticket Monitor
   - value: 194
     label: active users on eSnipe
   - value: 285
-    label: searches monitored around the clock
+    label: searches monitored around the clock, on eSnipe
 
 asOf: Numbers current as of June 2026

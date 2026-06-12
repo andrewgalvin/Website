@@ -1,66 +1,43 @@
 import {
-  BufferAttribute,
-  BufferGeometry,
+  CanvasTexture,
   Clock,
   Color,
+  DynamicDrawUsage,
   Group,
-  IcosahedronGeometry,
-  LineBasicMaterial,
-  LineSegments,
+  InstancedMesh,
+  Matrix4,
+  Mesh,
+  MeshBasicMaterial,
   PerspectiveCamera,
-  Points,
-  PointsMaterial,
+  PlaneGeometry,
+  Quaternion,
   Scene,
+  SRGBColorSpace,
   Vector3,
   WebGLRenderer,
-  WireframeGeometry,
 } from 'three'
 
 /**
- * Hero accent: a sparse, light-toned monitoring graph. Service nodes are
- * linked into a network, "request" packets hop node-to-node along real
- * edges, and a faint wireframe core turns at the center. It sits in the
- * hero's right-hand whitespace (the canvas is hidden below 64rem), and the
- * loop pauses whenever the tab is hidden or the hero scrolls away.
+ * Hero accent: "Instrument" — one console panel of the live monitoring
+ * system, center-right of the hero. Three sections share a single white
+ * card with internal hairlines: a big rolling requests-per-second counter
+ * with a scrolling sparkline, a sample of the monitor fleet blinking its
+ * heartbeat polls, and an alert counter that files each find into a grid
+ * of navy packets.
  *
- * The graph tells the monitoring story instead of just decorating: packets
- * leave fading trails; every few seconds one of them "finds" something,
- * turns deep navy, races down the backbone into the core, and the core
- * pulses; the pointer acts as load, pulling traffic toward the nearest
- * cluster and heating it up. A stats hook reports real numbers from the
- * animation (hops per second, alerts landed) for the DOM ticker.
+ * The panel is a real object in space: it rests at a committed tilt toward
+ * the headline, the pointer steers a true perspective parallax, and
+ * hovering a section highlights it and accelerates its activity. Type is
+ * drawn on 2x canvas textures so it stays crisp; every number on screen
+ * comes from the animation itself. The loop pauses when the tab is hidden
+ * or the hero scrolls away, and reduced-motion visitors get one composed
+ * still.
  */
 
-const PALETTE = {
-  node: 0x3d5a80, // the original site's b'dazzled blue
-  line: 0x14181f, // ink, used at very low opacity
-  packet: 0x5b9bd5, // sky blue: requests in flight
-  core: 0x2b4a73, // deep navy
-  bg: 0xf7f9fb, // page background: trails fade toward it
-}
-
-interface Packet {
-  from: number
-  to: number
-  t: number
-  speed: number
-}
-
-interface AlertRun {
-  /** index of the hijacked packet */
-  idx: number
-  /** waypoints from where it was, down the backbone, into the core */
-  legs: Vector3[]
-  /** current leg */
-  leg: number
-  /** progress along the current leg */
-  t: number
-}
-
 export interface HeroSceneStats {
-  /** packet hops per second, smoothed */
-  rate: number
-  /** alerts that reached the core since boot */
+  /** requests per second shown on the big counter */
+  rps: number
+  /** alerts filed since boot */
   alerts: number
 }
 
@@ -68,17 +45,43 @@ export interface HeroSceneHooks {
   onStats?: (stats: HeroSceneStats) => void
 }
 
+const INK = '#14181f'
+const SLATE = '#4b5869'
+const BRAND = '#3d5a80'
+const SKY = '#5b9bd5'
+const NAVY = '#2b4a73'
+const PANEL_FILL = '#ffffff'
+const HAIRLINE = '#dde4ec'
+const MONO = '"JetBrains Mono", ui-monospace, monospace'
+
+const PANEL_W = 432
+const SECTION_H = 152
+const PANEL_H = SECTION_H * 3
+const RADIUS = 16
+const PAD = 26
+/** css-px y offsets of the three section centers from the panel center */
+const SECTION_OFFSETS = [-SECTION_H, 0, SECTION_H]
+/** canvas-2d textures draw at 2x and minify, which keeps the type crisp */
+const TEXT_SCALE = 2
+
+const BAR_COUNT = 40
+const BAR_PITCH = 5
+const BAR_RIGHT = PANEL_W / 2 - PAD - 1
+/** shared baseline (css px below the section center) for numeral and bars */
+const BASELINE_1 = 44
+const MON_COUNT = 14
+const MON_PITCH = 26
+const MON_X0 = -PANEL_W / 2 + PAD + 7
+const MON_Y = 22
+const CELL_COUNT = 18
+const CELL_PITCH = 22
+const GRID_W = 6 * 14 + 5 * 8
+const CELL_X0 = PANEL_W / 2 - PAD - GRID_W + 7
+const CELL_Y0 = -4
+const BASELINE_3 = 47
+
 export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks = {}): () => void {
   const prefersReduced = matchMedia('(prefers-reduced-motion: reduce)').matches
-
-  const CLUSTERS = 5
-  const MEMBERS_PER_CLUSTER = 9
-  // centers + core ports + members
-  const NODE_COUNT = CLUSTERS * 2 + CLUSTERS * MEMBERS_PER_CLUSTER
-  const PACKET_COUNT = 26
-  // trail ring buffer: ~half a second of motion at a sample every 3 frames
-  const TRAIL_POINTS = 10
-  const TRAIL_EVERY = 3
 
   const renderer = new WebGLRenderer({
     canvas,
@@ -89,481 +92,489 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
   const scene = new Scene()
-  const camera = new PerspectiveCamera(48, 1, 0.1, 120)
-  camera.position.set(0, 0, 24)
-  const lookTarget = new Vector3(0, 0, 0)
+  // perspective camera tuned so 1 world unit = 1 css px at the panel's
+  // plane: layout math reads like CSS, but the tilt and parallax are real
+  const FOV = 23
+  const camera = new PerspectiveCamera(FOV, 1, 100, 6000)
+  // a telemetry console is a precise, axis-aligned object: it rests flat
+  // and shows its depth when the visitor moves — pointer parallax rotates
+  // it, hover lifts it, the shadow sells the elevation
+  const TILT_Y = 0
+  const TILT_X = 0
 
-  const group = new Group()
-  group.rotation.z = 0.16
-  scene.add(group)
+  const cluster = new Group()
+  scene.add(cluster)
+  const clusterBase = { x: 0, y: 0 }
+  let viewW = 0
+  let viewH = 0
 
-  /* ---- topology: service clusters around the core, joined by a backbone.
-     Index layout: [0, CLUSTERS) cluster centers · [CLUSTERS, 2*CLUSTERS)
-     core ports · the rest are cluster members. ---- */
-  const nodePos = new Float32Array(NODE_COUNT * 3)
-  const setNode = (i: number, x: number, y: number, z: number) => {
-    nodePos[i * 3] = x
-    nodePos[i * 3 + 1] = y
-    nodePos[i * 3 + 2] = z
-  }
-  const nodeVec = (i: number, out: Vector3) =>
-    out.set(nodePos[i * 3], nodePos[i * 3 + 1], nodePos[i * 3 + 2])
+  const m4 = new Matrix4()
+  const q = new Quaternion()
+  const vPos = new Vector3()
+  const vScl = new Vector3()
+  const tmpColor = new Color()
+  const skyC = new Color(SKY)
+  const navyC = new Color(NAVY)
+  const inkC = new Color(INK)
+  const paleC = new Color('#e8eef5')
 
-  for (let c = 0; c < CLUSTERS; c++) {
-    const angle = (c / CLUSTERS) * Math.PI * 2 + (Math.random() - 0.5) * 0.3
-    const radius = 7.2 + Math.random() * 1.1
-    const cx = Math.cos(angle) * radius
-    // alternate above/below the core so the ring reads as a constellation,
-    // not a flat belt
-    const cy = (c % 2 === 0 ? 1 : -1) * (1.1 + Math.random() * 1.5)
-    const cz = Math.sin(angle) * radius
-    setNode(c, cx, cy, cz)
-
-    // the cluster's port on the core's surface
-    const len = Math.hypot(cx, cy, cz)
-    setNode(CLUSTERS + c, (cx / len) * 3.1, (cy / len) * 2.4, (cz / len) * 3.1)
-
-    // members huddle around their center
-    for (let m = 0; m < MEMBERS_PER_CLUSTER; m++) {
-      const i = CLUSTERS * 2 + c * MEMBERS_PER_CLUSTER + m
-      const theta = Math.random() * Math.PI * 2
-      const phi = Math.acos(2 * Math.random() - 1)
-      const r = 0.8 + Math.random() * 1.2
-      setNode(
-        i,
-        cx + r * Math.sin(phi) * Math.cos(theta),
-        cy + r * Math.cos(phi) * 0.75,
-        cz + r * Math.sin(phi) * Math.sin(theta),
-      )
-    }
-  }
-
-  const clusterOf = (i: number): number => {
-    if (i < CLUSTERS) return i
-    if (i < CLUSTERS * 2) return i - CLUSTERS
-    return Math.floor((i - CLUSTERS * 2) / MEMBERS_PER_CLUSTER)
-  }
-
-  /* ---- node clouds. Vertex colors so the pointer can heat one cluster
-     without touching the others. ---- */
-  const baseNode = new Color(PALETTE.node)
-  const baseCore = new Color(PALETTE.core)
-  const heatColor = new Color(PALETTE.packet)
-
-  const memberCount = CLUSTERS * MEMBERS_PER_CLUSTER
-  const memberPos = nodePos.subarray(CLUSTERS * 2 * 3)
-  const memberColors = new Float32Array(memberCount * 3)
-  for (let i = 0; i < memberCount; i++) baseNode.toArray(memberColors, i * 3)
-  const memberGeo = new BufferGeometry()
-  memberGeo.setAttribute('position', new BufferAttribute(memberPos, 3))
-  memberGeo.setAttribute('color', new BufferAttribute(memberColors, 3))
-  const memberMat = new PointsMaterial({
-    vertexColors: true,
-    size: 0.14,
-    sizeAttenuation: true,
-    transparent: true,
-    opacity: 0.6,
-    depthWrite: false,
-  })
-  const nodes = new Points(memberGeo, memberMat)
-  nodes.frustumCulled = false
-  group.add(nodes)
-
-  const anchorCount = CLUSTERS * 2
-  const anchorColors = new Float32Array(anchorCount * 3)
-  for (let i = 0; i < anchorCount; i++) baseCore.toArray(anchorColors, i * 3)
-  const anchorGeo = new BufferGeometry()
-  anchorGeo.setAttribute('position', new BufferAttribute(nodePos.subarray(0, anchorCount * 3), 3))
-  anchorGeo.setAttribute('color', new BufferAttribute(anchorColors, 3))
-  const anchorMat = new PointsMaterial({
-    vertexColors: true,
-    size: 0.24,
-    sizeAttenuation: true,
-    transparent: true,
-    opacity: 0.85,
-    depthWrite: false,
-  })
-  const anchors = new Points(anchorGeo, anchorMat)
-  anchors.frustumCulled = false
-  group.add(anchors)
-
-  /* ---- edges ---- */
-  const adjacency: number[][] = Array.from({ length: NODE_COUNT }, () => [])
-  const edgeKeys = new Set<number>()
-  const localEdges: [number, number][] = []
-  const backboneEdges: [number, number][] = []
-
-  const distSq = (a: number, b: number) => {
-    const dx = nodePos[a * 3] - nodePos[b * 3]
-    const dy = nodePos[a * 3 + 1] - nodePos[b * 3 + 1]
-    const dz = nodePos[a * 3 + 2] - nodePos[b * 3 + 2]
-    return dx * dx + dy * dy + dz * dz
-  }
-
-  const addEdge = (a: number, b: number, list: [number, number][]) => {
-    const key = Math.min(a, b) * NODE_COUNT + Math.max(a, b)
-    if (a === b || edgeKeys.has(key)) return
-    edgeKeys.add(key)
-    adjacency[a].push(b)
-    adjacency[b].push(a)
-    list.push([a, b])
-  }
-
-  for (let c = 0; c < CLUSTERS; c++) {
-    // backbone: center → its core port, ports ring the core
-    addEdge(c, CLUSTERS + c, backboneEdges)
-    addEdge(CLUSTERS + c, CLUSTERS + ((c + 1) % CLUSTERS), backboneEdges)
-
-    // local mesh: every member → its center, plus its nearest sibling
-    for (let m = 0; m < MEMBERS_PER_CLUSTER; m++) {
-      const i = CLUSTERS * 2 + c * MEMBERS_PER_CLUSTER + m
-      addEdge(i, c, localEdges)
-      let nearest = -1
-      let best = Infinity
-      for (let n = 0; n < MEMBERS_PER_CLUSTER; n++) {
-        if (n === m) continue
-        const j = CLUSTERS * 2 + c * MEMBERS_PER_CLUSTER + n
-        const d = distSq(i, j)
-        if (d < best) {
-          best = d
-          nearest = j
-        }
-      }
-      if (nearest !== -1) addEdge(i, nearest, localEdges)
-    }
-  }
-
-  const buildLines = (list: [number, number][], color: number, opacity: number) => {
-    const pos = new Float32Array(list.length * 6)
-    list.forEach(([a, b], i) => {
-      pos.set(nodePos.subarray(a * 3, a * 3 + 3), i * 6)
-      pos.set(nodePos.subarray(b * 3, b * 3 + 3), i * 6 + 3)
-    })
-    const geo = new BufferGeometry()
-    geo.setAttribute('position', new BufferAttribute(pos, 3))
-    const mat = new LineBasicMaterial({ color, transparent: true, opacity })
-    const segments = new LineSegments(geo, mat)
-    group.add(segments)
-    return { geo, mat }
-  }
-
-  const local = buildLines(localEdges, PALETTE.line, 0.16)
-  const backbone = buildLines(backboneEdges, PALETTE.node, 0.4)
-
-  /* ---- packets: requests hopping across the graph ---- */
-  const packets: Packet[] = []
-  for (let i = 0; i < PACKET_COUNT; i++) {
-    const from = Math.floor(Math.random() * NODE_COUNT)
-    const neighbours = adjacency[from]
-    const to = neighbours[Math.floor(Math.random() * neighbours.length)]
-    packets.push({
-      from,
-      to,
-      t: Math.random(),
-      speed: 0.3 + Math.random() * 0.5,
-    })
-  }
-
-  const basePacket = new Color(PALETTE.packet)
-  const alertPacket = new Color(PALETTE.core)
-  const packetPos = new Float32Array(PACKET_COUNT * 3)
-  const packetColors = new Float32Array(PACKET_COUNT * 3)
-  for (let i = 0; i < PACKET_COUNT; i++) basePacket.toArray(packetColors, i * 3)
-  const packetGeo = new BufferGeometry()
-  packetGeo.setAttribute('position', new BufferAttribute(packetPos, 3))
-  packetGeo.setAttribute('color', new BufferAttribute(packetColors, 3))
-  const packetMat = new PointsMaterial({
-    vertexColors: true,
-    size: 0.3,
-    sizeAttenuation: true,
-    transparent: true,
-    opacity: 0.95,
-    depthWrite: false,
-  })
-  const packetPoints = new Points(packetGeo, packetMat)
-  packetPoints.frustumCulled = false
-  group.add(packetPoints)
-
-  /* ---- trails: a short fading tail behind every packet. Colors are baked
-     as a gradient toward the page background, which reads as alpha on the
-     solid light backdrop. ---- */
-  const trailRing = new Float32Array(PACKET_COUNT * TRAIL_POINTS * 3)
-  const segsPerPacket = TRAIL_POINTS - 1
-  const trailSegPos = new Float32Array(PACKET_COUNT * segsPerPacket * 6)
-  const trailSegColor = new Float32Array(PACKET_COUNT * segsPerPacket * 6)
-
-  const writeTrailGradient = (packetIndex: number, tint: Color) => {
-    const bg = new Color(PALETTE.bg)
-    for (let k = 0; k < segsPerPacket; k++) {
-      const strengthNear = (1 - k / segsPerPacket) * 0.85
-      const strengthFar = (1 - (k + 1) / segsPerPacket) * 0.85
-      const near = bg.clone().lerp(tint, strengthNear)
-      const far = bg.clone().lerp(tint, strengthFar)
-      const o = (packetIndex * segsPerPacket + k) * 6
-      near.toArray(trailSegColor, o)
-      far.toArray(trailSegColor, o + 3)
-    }
-  }
-  for (let i = 0; i < PACKET_COUNT; i++) writeTrailGradient(i, basePacket)
-
-  const trailGeo = new BufferGeometry()
-  trailGeo.setAttribute('position', new BufferAttribute(trailSegPos, 3))
-  trailGeo.setAttribute('color', new BufferAttribute(trailSegColor, 3))
-  const trailMat = new LineBasicMaterial({
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.5,
-    depthWrite: false,
-  })
-  const trails = new LineSegments(trailGeo, trailMat)
-  trails.frustumCulled = false
-  group.add(trails)
-
-  // collapse a packet's whole tail onto its current position (no streak)
-  const seedTrail = (i: number) => {
-    for (let k = 0; k < TRAIL_POINTS; k++) {
-      trailRing.set(packetPos.subarray(i * 3, i * 3 + 3), (i * TRAIL_POINTS + k) * 3)
-    }
-  }
-
-  const sampleTrails = () => {
-    for (let i = 0; i < PACKET_COUNT; i++) {
-      const base = i * TRAIL_POINTS * 3
-      // shift the ring one slot toward the tail, newest in front
-      trailRing.copyWithin(base + 3, base, base + (TRAIL_POINTS - 1) * 3)
-      trailRing.set(packetPos.subarray(i * 3, i * 3 + 3), base)
-      for (let k = 0; k < segsPerPacket; k++) {
-        const o = (i * segsPerPacket + k) * 6
-        trailSegPos.set(trailRing.subarray(base + k * 3, base + k * 3 + 3), o)
-        trailSegPos.set(trailRing.subarray(base + (k + 1) * 3, base + (k + 1) * 3 + 3), o + 3)
-      }
-    }
-    trailGeo.getAttribute('position').needsUpdate = true
-  }
-
-  const smoothstep = (t: number) => t * t * (3 - 2 * t)
-
-  /* ---- pointer: parallax + load. The cursor pulls traffic toward the
-     nearest cluster and heats it up. ---- */
-  const pointer = { x: 0, y: 0 }
-  const cursorLocal = new Vector3()
-  const tmpVec = new Vector3()
-  let pointerAt = -Infinity // elapsed seconds of last pointer move
+  /* ---- live state: every figure on screen comes from here ---- */
   let elapsed = 0
+  let rpsValue = 0
+  let rpsShown = 0
+  let lastNumeralAt = -1
+  let wanderTarget = 598 + Math.random() * 26
+  let nextWanderAt = 0
+  let sampleIn = 0.18
+  // boot with plausible history so the sparkline never starts flat: a
+  // breathing baseline with texture and a gentle rise into the present —
+  // the tail must never read as traffic dying under a healthy number
+  const fakeSample = (i: number) =>
+    588 +
+    (i / BAR_COUNT) * 26 +
+    Math.sin(i * 0.55) * 20 +
+    Math.sin(i * 0.17 + 2) * 12 +
+    (Math.random() - 0.5) * 24
+  const samples = Array.from({ length: BAR_COUNT }, (_, i) => fakeSample(i))
+  const monTimer = Array.from({ length: MON_COUNT }, () => 0.2 + Math.random() * 1.8)
+  const monFlash = Array.from({ length: MON_COUNT }, () => (Math.random() < 0.3 ? Math.random() : 0))
+  // a found grid that starts mid-story, not empty
+  let alerts = 4 + Math.floor(Math.random() * 3)
+  let alertIn = 3 + Math.random() * 2
+  let popSlot = -1
+  let popK = 1
+  let numFlash = 0
+
+  /* ---- crisp text: canvas-2d drawn at 2x onto plane-mapped textures ---- */
+  interface Panel {
+    mesh: Mesh
+    mat: MeshBasicMaterial
+    redraw: () => void
+    dispose: () => void
+  }
+  const panels: Panel[] = []
+
+  const makePanel = (w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void): Panel => {
+    const el = document.createElement('canvas')
+    el.width = w * TEXT_SCALE
+    el.height = h * TEXT_SCALE
+    const ctx = el.getContext('2d')
+    const tex = new CanvasTexture(el)
+    tex.colorSpace = SRGBColorSpace
+    const mat = new MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
+    const geo = new PlaneGeometry(w, h)
+    const mesh = new Mesh(geo, mat)
+    const redraw = () => {
+      if (!ctx) return
+      ctx.setTransform(TEXT_SCALE, 0, 0, TEXT_SCALE, 0, 0)
+      ctx.clearRect(0, 0, w, h)
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'alphabetic'
+      draw(ctx)
+      tex.needsUpdate = true
+    }
+    redraw()
+    const panel = {
+      mesh,
+      mat,
+      redraw,
+      dispose: () => {
+        geo.dispose()
+        mat.dispose()
+        tex.dispose()
+      },
+    }
+    panels.push(panel)
+    return panel
+  }
+
+  /* ---- the console base: one card, three sections, internal hairlines.
+     All static furniture (labels, metas, placeholders) bakes in here. ---- */
+  const sectionLabel = (
+    ctx: CanvasRenderingContext2D,
+    label: string,
+    topY: number,
+    meta?: string,
+  ) => {
+    ctx.fillStyle = BRAND
+    ctx.fillRect(PAD, topY + 27, 5, 5)
+    ctx.fillStyle = SLATE
+    ctx.font = `500 11px ${MONO}`
+    ctx.letterSpacing = '1.6px'
+    ctx.fillText(label, PAD + 12, topY + 35)
+    ctx.letterSpacing = '0px'
+    if (meta) {
+      ctx.font = `400 11px ${MONO}`
+      ctx.textAlign = 'right'
+      ctx.fillText(meta, PANEL_W - PAD, topY + 35)
+      ctx.textAlign = 'left'
+    }
+  }
+
+  const consoleBase = makePanel(PANEL_W, PANEL_H, (ctx) => {
+    ctx.beginPath()
+    ctx.roundRect(0.5, 0.5, PANEL_W - 1, PANEL_H - 1, RADIUS)
+    ctx.fillStyle = PANEL_FILL
+    ctx.fill()
+    ctx.lineWidth = 1
+    ctx.strokeStyle = HAIRLINE
+    ctx.stroke()
+    // internal section dividers, inset like a console's rule lines
+    for (const yy of [SECTION_H, SECTION_H * 2]) {
+      ctx.beginPath()
+      ctx.moveTo(22, yy + 0.5)
+      ctx.lineTo(PANEL_W - 22, yy + 0.5)
+      ctx.stroke()
+    }
+    sectionLabel(ctx, 'REQUESTS / SEC', 0)
+    sectionLabel(ctx, 'MONITORS', SECTION_H, 'showing 14 of 285')
+    // "finds", not "alerts": on a resale monitor a hit is a win, and the
+    // label should read as good news at a glance
+    sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'last hour')
+    // alert grid placeholders
+    ctx.strokeStyle = HAIRLINE
+    for (let n = 0; n < CELL_COUNT; n++) {
+      const x = PANEL_W / 2 + CELL_X0 + (n % 6) * CELL_PITCH - 7
+      const y = SECTION_H * 2 + SECTION_H / 2 + CELL_Y0 + Math.floor(n / 6) * CELL_PITCH - 7
+      ctx.beginPath()
+      ctx.roundRect(x + 0.5, y + 0.5, 13, 13, 4)
+      ctx.stroke()
+    }
+  })
+
+  // one soft shadow under the one console: elevation, cheaply
+  const shadowSprite = (() => {
+    const padPx = 46
+    const el = document.createElement('canvas')
+    el.width = (PANEL_W + padPx * 2) / 2
+    el.height = (PANEL_H + padPx * 2) / 2
+    const ctx = el.getContext('2d')
+    if (ctx) {
+      ctx.filter = 'blur(13px)'
+      ctx.fillStyle = '#0c1320'
+      ctx.beginPath()
+      ctx.roundRect(padPx / 2, padPx / 2, PANEL_W / 2, PANEL_H / 2, RADIUS / 2)
+      ctx.fill()
+    }
+    const tex = new CanvasTexture(el)
+    tex.colorSpace = SRGBColorSpace
+    return { tex, w: PANEL_W + padPx * 2, h: PANEL_H + padPx * 2 }
+  })()
+  const shadowMat = new MeshBasicMaterial({
+    map: shadowSprite.tex,
+    transparent: true,
+    opacity: 0.16,
+    depthWrite: false,
+  })
+  const shadow = new Mesh(new PlaneGeometry(shadowSprite.w, shadowSprite.h), shadowMat)
+  shadow.position.set(8, -16, -18)
+  shadow.renderOrder = -1
+  cluster.add(shadow)
+
+  consoleBase.mesh.renderOrder = 0
+  cluster.add(consoleBase.mesh)
+
+  /* ---- section hover highlights + activity state ---- */
+  interface Section {
+    group: Group
+    hover: number
+    highlightMat: MeshBasicMaterial
+  }
+  const sections: Section[] = []
+  const highlightGeo = new PlaneGeometry(PANEL_W - 14, SECTION_H - 14)
+  for (let i = 0; i < 3; i++) {
+    const group = new Group()
+    group.position.set(0, -SECTION_OFFSETS[i], 6)
+    const highlightMat = new MeshBasicMaterial({
+      color: SKY,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    })
+    const highlight = new Mesh(highlightGeo, highlightMat)
+    highlight.position.z = -2
+    highlight.renderOrder = 0.5
+    group.add(highlight)
+    cluster.add(group)
+    sections.push({ group, hover: 0, highlightMat })
+  }
+
+  /* ---- section 1: the big rolling req/s numeral + scrolling sparkline ---- */
+  const rpsPanel = makePanel(220, 84, (ctx) => {
+    ctx.fillStyle = INK
+    ctx.font = `500 64px ${MONO}`
+    ctx.fillText(String(rpsShown), 0, 62)
+  })
+  rpsPanel.mesh.position.set(-PANEL_W / 2 + PAD + 110, -(BASELINE_1 - 62 + 40), 4)
+  rpsPanel.mesh.renderOrder = 1
+  sections[0].group.add(rpsPanel.mesh)
+
+  const barGeo = new PlaneGeometry(2, 1)
+  barGeo.translate(0, 0.5, 0) // scale grows the bar up from its baseline
+  const barMat = new MeshBasicMaterial({ transparent: true, opacity: 0.92, depthWrite: false })
+  const barMesh = new InstancedMesh(barGeo, barMat, BAR_COUNT)
+  barMesh.frustumCulled = false
+  barMesh.renderOrder = 1
+  barMesh.instanceMatrix.setUsage(DynamicDrawUsage)
+  for (let j = 0; j < BAR_COUNT; j++) {
+    barMesh.setColorAt(j, j === BAR_COUNT - 1 ? skyC : tmpColor.set(BRAND))
+  }
+  sections[0].group.add(barMesh)
+
+  const layoutBars = () => {
+    for (let j = 0; j < BAR_COUNT; j++) {
+      const v = samples[j]
+      const h = Math.min(46, Math.max(6, 5 + ((v - 545) / 110) * 40))
+      // the newest bar is the current value: wider, so the chart visibly
+      // connects to the big numeral beside it
+      const wide = j === BAR_COUNT - 1 ? 1.8 : 1
+      m4.compose(
+        vPos.set(BAR_RIGHT - (BAR_COUNT - 1 - j) * BAR_PITCH, -BASELINE_1, 4),
+        q,
+        vScl.set(wide, h, 1),
+      )
+      barMesh.setMatrixAt(j, m4)
+    }
+    barMesh.instanceMatrix.needsUpdate = true
+  }
+  layoutBars()
+
+  /* ---- shared packet-square sprite for monitors and alert cells ---- */
+  const squareEl = document.createElement('canvas')
+  squareEl.width = 64
+  squareEl.height = 64
+  const squareCtx = squareEl.getContext('2d')
+  if (squareCtx) {
+    squareCtx.beginPath()
+    squareCtx.roundRect(0, 0, 64, 64, 18)
+    squareCtx.fillStyle = '#ffffff'
+    squareCtx.fill()
+  }
+  const squareTex = new CanvasTexture(squareEl)
+  squareTex.colorSpace = SRGBColorSpace
+  const squareMat = new MeshBasicMaterial({ map: squareTex, transparent: true, depthWrite: false })
+  const squareGeo = new PlaneGeometry(14, 14)
+
+  /* ---- section 2: heartbeat polls across a sample of the fleet ---- */
+  const monMesh = new InstancedMesh(squareGeo, squareMat, MON_COUNT)
+  monMesh.frustumCulled = false
+  monMesh.renderOrder = 1
+  monMesh.instanceMatrix.setUsage(DynamicDrawUsage)
+  sections[1].group.add(monMesh)
+
+  /* ---- section 3: alert counter + the grid the finds file into ---- */
+  const alertPanel = makePanel(160, 70, (ctx) => {
+    ctx.fillStyle = '#ffffff' // tinted by the material so the flash is free
+    ctx.font = `500 48px ${MONO}`
+    ctx.fillText(String(alerts), 0, 52)
+  })
+  alertPanel.mat.color.set(INK)
+  alertPanel.mesh.position.set(-PANEL_W / 2 + PAD + 80, -(BASELINE_3 - 52 + 33), 4)
+  alertPanel.mesh.renderOrder = 1
+  sections[2].group.add(alertPanel.mesh)
+
+  const cellMesh = new InstancedMesh(squareGeo, squareMat, CELL_COUNT)
+  cellMesh.frustumCulled = false
+  cellMesh.renderOrder = 1
+  cellMesh.instanceMatrix.setUsage(DynamicDrawUsage)
+  sections[2].group.add(cellMesh)
+
+  const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+
+  const updateCells = () => {
+    const filled = Math.min(alerts, CELL_COUNT)
+    const k = easeOutCubic(Math.min(1, popK))
+    for (let n = 0; n < CELL_COUNT; n++) {
+      const isPop = n === popSlot && popK < 1
+      const on = n < filled
+      const sc = on ? (isPop ? 1 + 0.6 * (1 - k) * (1 - k) : 1) : 0.0001
+      m4.compose(
+        vPos.set(CELL_X0 + (n % 6) * CELL_PITCH, -(CELL_Y0 + Math.floor(n / 6) * CELL_PITCH), 4),
+        q,
+        vScl.set(sc, sc, 1),
+      )
+      cellMesh.setMatrixAt(n, m4)
+      if (isPop) tmpColor.copy(skyC).lerp(navyC, k)
+      else tmpColor.copy(navyC)
+      cellMesh.setColorAt(n, tmpColor)
+    }
+    cellMesh.instanceMatrix.needsUpdate = true
+    if (cellMesh.instanceColor) cellMesh.instanceColor.needsUpdate = true
+  }
+
+  /* ---- pointer: section hover and true parallax ---- */
+  const pointerClient = { x: 0, y: 0 }
+  const pointerNorm = { x: 0, y: 0 }
+  let pointerHas = false
+  let hovered = -1
+  let parX = 0
+  let parY = 0
+  let lift = 0
 
   const onPointerMove = (e: PointerEvent) => {
-    pointer.x = (e.clientX / window.innerWidth) * 2 - 1
-    pointer.y = (e.clientY / window.innerHeight) * 2 - 1
-    pointerAt = elapsed
+    pointerClient.x = e.clientX
+    pointerClient.y = e.clientY
+    pointerNorm.x = (e.clientX / window.innerWidth) * 2 - 1
+    pointerNorm.y = (e.clientY / window.innerHeight) * 2 - 1
+    pointerHas = true
   }
   const parallaxEnabled = !prefersReduced && matchMedia('(pointer: fine)').matches
   if (parallaxEnabled) window.addEventListener('pointermove', onPointerMove, { passive: true })
 
-  const pointerActive = () => parallaxEnabled && elapsed - pointerAt < 2.5
-
-  const updateCursorLocal = () => {
-    // project the pointer onto the z=0 plane in world space, then into the
-    // rotating group's local space so it can be compared with node positions
-    const halfH = Math.tan((camera.fov * Math.PI) / 360) * camera.position.z
-    tmpVec.set(pointer.x * halfH * camera.aspect, -pointer.y * halfH, 0)
-    cursorLocal.copy(group.worldToLocal(tmpVec))
-  }
-
-  /* ---- cluster heat ---- */
-  let heatedCluster = -1
-  let heatLevel = 0
-
-  const paintCluster = (cluster: number, heat: number) => {
-    if (cluster < 0) return
-    const memberTint = baseNode.clone().lerp(heatColor, heat * 0.9)
-    for (let m = 0; m < MEMBERS_PER_CLUSTER; m++) {
-      memberTint.toArray(memberColors, (cluster * MEMBERS_PER_CLUSTER + m) * 3)
-    }
-    const anchorTint = baseCore.clone().lerp(heatColor, heat * 0.9)
-    anchorTint.toArray(anchorColors, cluster * 3) // center
-    anchorTint.toArray(anchorColors, (CLUSTERS + cluster) * 3) // port
-    memberGeo.getAttribute('color').needsUpdate = true
-    anchorGeo.getAttribute('color').needsUpdate = true
-  }
-
-  const updateHeat = (dt: number) => {
-    let target = -1
-    if (pointerActive()) {
-      updateCursorLocal()
-      let best = 49 // only react within distance 7 of a cluster center
-      for (let c = 0; c < CLUSTERS; c++) {
-        const d = nodeVec(c, tmpVec).distanceToSquared(cursorLocal)
-        if (d < best) {
-          best = d
-          target = c
-        }
-      }
-    }
-    if (target !== heatedCluster) {
-      paintCluster(heatedCluster, 0) // cool the old cluster instantly
-      heatedCluster = target
-    }
-    const goal = target >= 0 ? 1 : 0
-    const next = heatLevel + (goal - heatLevel) * Math.min(1, dt * 5)
-    if (Math.abs(next - heatLevel) > 0.005) {
-      heatLevel = next
-      paintCluster(heatedCluster, heatLevel)
-    } else {
-      heatLevel = next
+  const updateHover = () => {
+    hovered = -1
+    if (!pointerHas) return
+    const rect = canvas.getBoundingClientRect()
+    const lx = pointerClient.x - rect.left
+    const ly = pointerClient.y - rect.top
+    if (lx < 0 || ly < 0 || lx > rect.width || ly > rect.height) return
+    const s = cluster.scale.x
+    const dx = lx - (clusterBase.x + parX)
+    const dy = ly - (clusterBase.y + parY)
+    if (Math.abs(dx) > (PANEL_W / 2) * s) return
+    for (let i = 0; i < sections.length; i++) {
+      if (Math.abs(dy - SECTION_OFFSETS[i] * s) <= (SECTION_H / 2) * s) hovered = i
     }
   }
 
-  /* ---- stats for the DOM ticker ---- */
-  let hops = 0
-  let alertsFound = 0
-  let smoothedRate = 0
+  /* ---- stats hook: the console's own numbers ---- */
   let statsAt = 0
-
   const tickStats = () => {
+    if (prefersReduced) return
     if (elapsed - statsAt < 0.5) return
-    const instant = hops / (elapsed - statsAt)
-    smoothedRate = smoothedRate === 0 ? instant : smoothedRate * 0.6 + instant * 0.4
-    hops = 0
     statsAt = elapsed
-    hooks.onStats?.({ rate: smoothedRate, alerts: alertsFound })
+    hooks.onStats?.({ rps: rpsValue, alerts })
   }
 
-  /* ---- packets in flight ---- */
-  const updatePackets = (dt: number, speedScale = 1, skip = -1) => {
-    const biased = pointerActive()
-    for (let i = 0; i < packets.length; i++) {
-      if (i === skip) continue
-      const p = packets[i]
-      p.t += dt * p.speed * speedScale
-      while (p.t >= 1) {
-        p.t -= 1
-        hops++
-        const arrived = p.to
-        const neighbours = adjacency[arrived]
-        let next: number
-        if (biased && Math.random() < 0.65) {
-          // under load, traffic drifts toward the cursor
-          next = neighbours[0]
-          let best = Infinity
-          for (const n of neighbours) {
-            const d = nodeVec(n, tmpVec).distanceToSquared(cursorLocal)
-            if (d < best) {
-              best = d
-              next = n
-            }
-          }
-        } else {
-          next = neighbours[Math.floor(Math.random() * neighbours.length)]
-          // avoid bouncing straight back when the node has other options
-          if (next === p.from && neighbours.length > 1) {
-            next = neighbours[(neighbours.indexOf(next) + 1) % neighbours.length]
-          }
-        }
-        p.from = arrived
-        p.to = next
-        p.speed = 0.3 + Math.random() * 0.5
+  /* ---- one tick of the console ---- */
+  const step = (dt: number) => {
+    elapsed += dt
+
+    let maxHover = 0
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i]
+      const goal = hovered === i ? 1 : 0
+      section.hover += (goal - section.hover) * Math.min(1, dt * 6)
+      maxHover = Math.max(maxHover, section.hover)
+      section.highlightMat.opacity = 0.05 * section.hover
+      section.group.position.z = 6 + 6 * section.hover
+    }
+    // the whole console lifts slightly toward the camera under attention
+    lift += (18 * maxHover - lift) * Math.min(1, dt * 6)
+    shadowMat.opacity = 0.16 - 0.04 * maxHover
+
+    // requests/sec: spin up, then a lively smoothed walk; hover widens the
+    // jitter like a load spike. The wander retargets often enough that the
+    // sparkline always breathes.
+    if (elapsed >= nextWanderAt) {
+      wanderTarget = 565 + Math.random() * 80
+      nextWanderAt = elapsed + 1.1 + Math.random() * 1.2
+    }
+    const boot = Math.min(1, elapsed / 1.6)
+    const target = wanderTarget * easeOutCubic(boot)
+    const amp = 170 * (1 + 1.6 * sections[0].hover)
+    rpsValue += (target - rpsValue) * Math.min(1, dt * 2.4) + (Math.random() - 0.5) * dt * amp
+    rpsValue = Math.min(680, Math.max(0, rpsValue))
+
+    const shown = Math.round(rpsValue)
+    if (shown !== rpsShown && elapsed - lastNumeralAt >= 0.125) {
+      rpsShown = shown
+      lastNumeralAt = elapsed
+      rpsPanel.redraw()
+    }
+
+    sampleIn -= dt * (1 + 0.7 * sections[0].hover)
+    if (sampleIn <= 0) {
+      sampleIn += 0.18
+      samples.shift()
+      // sampled with its own texture so neighbours never flatline together
+      samples.push(rpsValue + (Math.random() - 0.5) * 24)
+      layoutBars()
+    }
+
+    // monitors: every packet polls on its own cadence; hover raises tempo
+    for (let i = 0; i < MON_COUNT; i++) {
+      monTimer[i] -= dt * (1 + 1.3 * sections[1].hover)
+      if (monTimer[i] <= 0) {
+        monFlash[i] = 1
+        monTimer[i] = 0.6 + Math.random() * 1.4
       }
-      const k = smoothstep(p.t)
-      const a = p.from * 3
-      const b = p.to * 3
-      packetPos[i * 3] = nodePos[a] + (nodePos[b] - nodePos[a]) * k
-      packetPos[i * 3 + 1] = nodePos[a + 1] + (nodePos[b + 1] - nodePos[a + 1]) * k
-      packetPos[i * 3 + 2] = nodePos[a + 2] + (nodePos[b + 2] - nodePos[a + 2]) * k
+      monFlash[i] *= Math.exp(-dt * 4.5)
+      tmpColor.copy(paleC).lerp(skyC, Math.min(1, monFlash[i] * 1.15))
+      monMesh.setColorAt(i, tmpColor)
+      const ms = 1 + 0.14 * monFlash[i]
+      m4.compose(vPos.set(MON_X0 + i * MON_PITCH, -MON_Y, 4), q, vScl.set(ms, ms, 1))
+      monMesh.setMatrixAt(i, m4)
     }
-    packetGeo.getAttribute('position').needsUpdate = true
-  }
+    monMesh.instanceMatrix.needsUpdate = true
+    if (monMesh.instanceColor) monMesh.instanceColor.needsUpdate = true
 
-  /* ---- alerts: a packet finds something and races it into the core ---- */
-  let alert: AlertRun | null = null
-  let nextAlertAt = 3.5 + Math.random() * 2
-  let corePulse = 0
-
-  const startAlert = () => {
-    const idx = Math.floor(Math.random() * PACKET_COUNT)
-    const node = packets[idx].to
-    const cluster = clusterOf(node)
-    const legs: Vector3[] = [new Vector3(packetPos[idx * 3], packetPos[idx * 3 + 1], packetPos[idx * 3 + 2])]
-    if (node >= CLUSTERS * 2) legs.push(nodeVec(cluster, new Vector3())) // member → its center
-    const isPort = node >= CLUSTERS && node < CLUSTERS * 2
-    if (!isPort) legs.push(nodeVec(CLUSTERS + cluster, new Vector3())) // → the cluster's core port
-    legs.push(new Vector3(0, 0, 0)) // → into the core
-    alert = { idx, legs, leg: 0, t: 0 }
-    alertPacket.toArray(packetColors, idx * 3)
-    packetGeo.getAttribute('color').needsUpdate = true
-    writeTrailGradient(idx, alertPacket)
-    trailGeo.getAttribute('color').needsUpdate = true
-  }
-
-  const finishAlert = () => {
-    if (!alert) return
-    const idx = alert.idx
-    corePulse = 1
-    alertsFound++
-    // respawn the packet somewhere fresh, back in regular livery, with its
-    // trail collapsed onto the new spot so nothing streaks across the scene
-    const from = Math.floor(Math.random() * NODE_COUNT)
-    const neighbours = adjacency[from]
-    packets[idx] = { from, to: neighbours[Math.floor(Math.random() * neighbours.length)], t: 0, speed: 0.3 + Math.random() * 0.5 }
-    packetPos.set(nodePos.subarray(from * 3, from * 3 + 3), idx * 3)
-    seedTrail(idx)
-    basePacket.toArray(packetColors, idx * 3)
-    packetGeo.getAttribute('color').needsUpdate = true
-    writeTrailGradient(idx, basePacket)
-    trailGeo.getAttribute('color').needsUpdate = true
-    alert = null
-    nextAlertAt = elapsed + 4 + Math.random() * 3
-  }
-
-  const updateAlert = (dt: number) => {
-    if (!alert) {
-      if (elapsed >= nextAlertAt) startAlert()
-      return
+    // alerts: a find every few seconds; the numeral flashes and the packet
+    // files into the grid, recycling the oldest slot once full
+    alertIn -= dt * (1 + 2.2 * sections[2].hover)
+    if (alertIn <= 0) {
+      alerts++
+      alertIn = 4 + Math.random() * 3
+      popSlot = (alerts - 1) % CELL_COUNT
+      popK = 0
+      numFlash = 1
+      alertPanel.redraw()
     }
-    const idx = alert.idx
-    alert.t += dt * 1.5
-    while (alert.t >= 1) {
-      alert.t -= 1
-      alert.leg++
-      if (alert.leg >= alert.legs.length - 1) {
-        finishAlert()
-        return
-      }
-    }
-    const a = alert.legs[alert.leg]
-    const b = alert.legs[alert.leg + 1]
-    const k = smoothstep(alert.t)
-    packetPos[idx * 3] = a.x + (b.x - a.x) * k
-    packetPos[idx * 3 + 1] = a.y + (b.y - a.y) * k
-    packetPos[idx * 3 + 2] = a.z + (b.z - a.z) * k
+    if (popK < 1) popK = Math.min(1, popK + dt / 0.45)
+    numFlash *= Math.exp(-dt * 3)
+    alertPanel.mat.color.copy(inkC).lerp(skyC, Math.min(1, numFlash * 0.9))
+    alertPanel.mesh.scale.setScalar(1 + 0.1 * numFlash)
+    updateCells()
+
+    tickStats()
   }
 
-  /* ---- the core service at the center of the graph ---- */
-  const coreGeo = new WireframeGeometry(new IcosahedronGeometry(2.9, 1))
-  const coreMat = new LineBasicMaterial({
-    color: PALETTE.node,
-    transparent: true,
-    opacity: 0.22,
-  })
-  const core = new LineSegments(coreGeo, coreMat)
-  group.add(core)
-
-  const innerGeo = new WireframeGeometry(new IcosahedronGeometry(1.45, 0))
-  const innerMat = new LineBasicMaterial({
-    color: PALETTE.core,
-    transparent: true,
-    opacity: 0.55,
-  })
-  const inner = new LineSegments(innerGeo, innerMat)
-  group.add(inner)
-
-  /* ---- sizing ---- */
+  /* ---- sizing: the console centers in the band between the css fade
+     mask on the canvas's left edge and the right margin, clear of the
+     header and the stats row ---- */
   const host = canvas.parentElement ?? canvas
+  const placeCluster = () => {
+    const bob = prefersReduced ? 0 : Math.sin(elapsed * 0.7) * 2
+    cluster.position.set(
+      clusterBase.x + parX - viewW / 2,
+      viewH / 2 - (clusterBase.y + parY) + bob,
+      lift,
+    )
+    cluster.rotation.y = TILT_Y + (parallaxEnabled ? pointerNorm.x * 0.05 : 0)
+    cluster.rotation.x = TILT_X - (parallaxEnabled ? pointerNorm.y * 0.035 : 0)
+  }
+  const layout = (w: number, h: number) => {
+    viewW = w
+    viewH = h
+    // measure the stats divider and stay clear of it (shadow included),
+    // instead of trusting viewport math that drifts with content
+    let bottomBound = Math.min(h - 210, 596)
+    const statsEl = document.querySelector('.hero-stats')
+    if (statsEl) {
+      const hostTop = host.getBoundingClientRect().top
+      const statsTop = statsEl.getBoundingClientRect().top
+      bottomBound = Math.min(bottomBound, Math.max(300, statsTop - hostTop - 30))
+    }
+    const sW = (w * 0.66 - PAD) / PANEL_W
+    const sV = (bottomBound - 92) / PANEL_H
+    const s = Math.max(0.2, Math.min(1, sW, sV))
+    const top = 92 + Math.max(0, (bottomBound - 92 - PANEL_H * s) / 2)
+    const fadeSafe = w * 0.26 + (PANEL_W / 2) * s + 10
+    const rightMost = w - PAD - 16 - (PANEL_W / 2) * s
+    clusterBase.x = Math.round(Math.min(rightMost, Math.max(w * 0.5, fadeSafe)))
+    clusterBase.y = Math.round(top + (PANEL_H * s) / 2)
+    cluster.scale.setScalar(s)
+    placeCluster()
+  }
   const resize = () => {
     const w = host.clientWidth || 1
     const h = host.clientHeight || 1
     renderer.setSize(w, h, false)
     camera.aspect = w / h
+    // distance at which one world unit projects to exactly one css pixel
+    camera.position.z = h / 2 / Math.tan((FOV * Math.PI) / 360)
     camera.updateProjectionMatrix()
+    layout(w, h)
     if (!running) renderer.render(scene, camera)
   }
   const ro = new ResizeObserver(resize)
@@ -574,43 +585,20 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   let raf = 0
   let running = false
   let inView = true
-  let frameCount = 0
 
   const frame = () => {
     raf = requestAnimationFrame(frame)
     const dt = Math.min(clock.getDelta(), 0.05)
-    elapsed += dt
-    frameCount++
 
-    group.rotation.y += dt * 0.04
-    core.rotation.y -= dt * 0.1
-    core.rotation.x += dt * 0.04
-    inner.rotation.y += dt * 0.25
-
-    if (parallaxEnabled) {
-      camera.position.x += (pointer.x * 1.2 - camera.position.x) * 0.03
-      camera.position.y += (-pointer.y * 0.8 - camera.position.y) * 0.03
+    updateHover()
+    if (parallaxEnabled && pointerHas) {
+      const k = Math.min(1, dt * 3)
+      parX += (pointerNorm.x * 5 - parX) * k
+      parY += (pointerNorm.y * 4 - parY) * k
     }
-    camera.lookAt(lookTarget)
 
-    updateHeat(dt)
-
-    // boot-up: traffic ramps from a trickle to full flow over the first
-    // seconds, so the network reads as coming online with the hero intro
-    const boot = smoothstep(Math.min(1, elapsed / 2.5))
-    const load = 1 + heatLevel * 0.45
-    updateAlert(dt)
-    updatePackets(dt, (0.25 + 0.75 * boot) * load, alert ? alert.idx : -1)
-    if (frameCount % TRAIL_EVERY === 0) sampleTrails()
-
-    // the core settles after an alert lands
-    corePulse *= Math.exp(-dt * 3)
-    const pulse = 1 + Math.sin(elapsed * 1.2) * 0.05 + corePulse * 0.3
-    inner.scale.setScalar(pulse)
-    coreMat.opacity = 0.22 + corePulse * 0.3
-    innerMat.opacity = 0.55 + corePulse * 0.35
-
-    tickStats()
+    step(dt)
+    placeCluster()
     renderer.render(scene, camera)
   }
 
@@ -637,11 +625,24 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   })
   io.observe(canvas)
 
+  let disposed = false
   resize()
-  updatePackets(0)
-  for (let i = 0; i < PACKET_COUNT; i++) seedTrail(i)
+  step(0)
+
+  // the page requests JetBrains Mono itself, so this almost always resolves
+  // immediately; it backstops a first paint before the face is ready
+  if (document.fonts.status !== 'loaded') {
+    document.fonts.ready.then(() => {
+      if (disposed) return
+      for (const p of panels) p.redraw()
+      if (!running) renderer.render(scene, camera)
+    })
+  }
+
   if (prefersReduced) {
-    // a still frame keeps the depth without the motion
+    // simulate ~10s so the still frame shows a composed, plausible state
+    for (let i = 0; i < 170; i++) step(1 / 16)
+    placeCluster()
     renderer.render(scene, camera)
   } else {
     // the canvas fades in over the first rendered frames; the timeout
@@ -657,15 +658,23 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   }
 
   return () => {
+    disposed = true
     setRunning(false)
     io.disconnect()
     ro.disconnect()
     document.removeEventListener('visibilitychange', onVisibility)
     if (parallaxEnabled) window.removeEventListener('pointermove', onPointerMove)
-    for (const geo of [memberGeo, anchorGeo, local.geo, backbone.geo, packetGeo, trailGeo, coreGeo, innerGeo])
-      geo.dispose()
-    for (const mat of [memberMat, anchorMat, local.mat, backbone.mat, packetMat, trailMat, coreMat, innerMat])
-      mat.dispose()
+    for (const p of panels) p.dispose()
+    for (const section of sections) section.highlightMat.dispose()
+    highlightGeo.dispose()
+    shadow.geometry.dispose()
+    shadowMat.dispose()
+    shadowSprite.tex.dispose()
+    barGeo.dispose()
+    barMat.dispose()
+    squareGeo.dispose()
+    squareMat.dispose()
+    squareTex.dispose()
     renderer.dispose()
   }
 }
