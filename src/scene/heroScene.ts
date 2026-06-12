@@ -40,10 +40,11 @@ interface Packet {
 export function initHeroScene(canvas: HTMLCanvasElement): () => void {
   const prefersReduced = matchMedia('(prefers-reduced-motion: reduce)').matches
 
-  const NODE_COUNT = 72
+  const CLUSTERS = 5
+  const MEMBERS_PER_CLUSTER = 9
+  // centers + core ports + members
+  const NODE_COUNT = CLUSTERS * 2 + CLUSTERS * MEMBERS_PER_CLUSTER
   const PACKET_COUNT = 26
-  const LINK_DIST = 5.8
-  const MAX_LINKS_PER_NODE = 3
 
   const renderer = new WebGLRenderer({
     canvas,
@@ -59,23 +60,53 @@ export function initHeroScene(canvas: HTMLCanvasElement): () => void {
   const lookTarget = new Vector3(0, 0, 0)
 
   const group = new Group()
-  group.rotation.z = 0.1
+  group.rotation.z = 0.16
   scene.add(group)
 
-  /* ---- nodes: a flattened spherical cloud ---- */
+  /* ---- topology: service clusters around the core, joined by a backbone.
+     Index layout: [0, CLUSTERS) cluster centers · [CLUSTERS, 2*CLUSTERS)
+     core ports · the rest are cluster members. ---- */
   const nodePos = new Float32Array(NODE_COUNT * 3)
-  for (let i = 0; i < NODE_COUNT; i++) {
-    const r = 7.5 + Math.random() * 4
-    const theta = Math.random() * Math.PI * 2
-    const phi = Math.acos(2 * Math.random() - 1)
-    nodePos[i * 3] = r * Math.sin(phi) * Math.cos(theta)
-    nodePos[i * 3 + 1] = r * Math.cos(phi) * 0.6
-    nodePos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta)
+  const setNode = (i: number, x: number, y: number, z: number) => {
+    nodePos[i * 3] = x
+    nodePos[i * 3 + 1] = y
+    nodePos[i * 3 + 2] = z
   }
 
-  const nodeGeo = new BufferGeometry()
-  nodeGeo.setAttribute('position', new BufferAttribute(nodePos, 3))
-  const nodeMat = new PointsMaterial({
+  for (let c = 0; c < CLUSTERS; c++) {
+    const angle = (c / CLUSTERS) * Math.PI * 2 + (Math.random() - 0.5) * 0.3
+    const radius = 7.2 + Math.random() * 1.1
+    const cx = Math.cos(angle) * radius
+    // alternate above/below the core so the ring reads as a constellation,
+    // not a flat belt
+    const cy = (c % 2 === 0 ? 1 : -1) * (1.1 + Math.random() * 1.5)
+    const cz = Math.sin(angle) * radius
+    setNode(c, cx, cy, cz)
+
+    // the cluster's port on the core's surface
+    const len = Math.hypot(cx, cy, cz)
+    setNode(CLUSTERS + c, (cx / len) * 3.1, (cy / len) * 2.4, (cz / len) * 3.1)
+
+    // members huddle around their center
+    for (let m = 0; m < MEMBERS_PER_CLUSTER; m++) {
+      const i = CLUSTERS * 2 + c * MEMBERS_PER_CLUSTER + m
+      const theta = Math.random() * Math.PI * 2
+      const phi = Math.acos(2 * Math.random() - 1)
+      const r = 0.8 + Math.random() * 1.2
+      setNode(
+        i,
+        cx + r * Math.sin(phi) * Math.cos(theta),
+        cy + r * Math.cos(phi) * 0.75,
+        cz + r * Math.sin(phi) * Math.sin(theta),
+      )
+    }
+  }
+
+  // members: small dots · centers and ports: slightly larger anchors
+  const memberPos = nodePos.subarray(CLUSTERS * 2 * 3)
+  const memberGeo = new BufferGeometry()
+  memberGeo.setAttribute('position', new BufferAttribute(memberPos, 3))
+  const memberMat = new PointsMaterial({
     color: PALETTE.node,
     size: 0.14,
     sizeAttenuation: true,
@@ -83,12 +114,30 @@ export function initHeroScene(canvas: HTMLCanvasElement): () => void {
     opacity: 0.55,
     depthWrite: false,
   })
-  const nodes = new Points(nodeGeo, nodeMat)
+  const nodes = new Points(memberGeo, memberMat)
   group.add(nodes)
 
-  /* ---- edges: nearest neighbours within reach, every node connected ---- */
+  const anchorGeo = new BufferGeometry()
+  anchorGeo.setAttribute(
+    'position',
+    new BufferAttribute(nodePos.subarray(0, CLUSTERS * 2 * 3), 3),
+  )
+  const anchorMat = new PointsMaterial({
+    color: PALETTE.core,
+    size: 0.24,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.8,
+    depthWrite: false,
+  })
+  const anchors = new Points(anchorGeo, anchorMat)
+  group.add(anchors)
+
+  /* ---- edges ---- */
   const adjacency: number[][] = Array.from({ length: NODE_COUNT }, () => [])
   const edgeKeys = new Set<number>()
+  const localEdges: [number, number][] = []
+  const backboneEdges: [number, number][] = []
 
   const distSq = (a: number, b: number) => {
     const dx = nodePos[a * 3] - nodePos[b * 3]
@@ -97,51 +146,59 @@ export function initHeroScene(canvas: HTMLCanvasElement): () => void {
     return dx * dx + dy * dy + dz * dz
   }
 
-  const addEdge = (a: number, b: number) => {
+  const addEdge = (a: number, b: number, list: [number, number][]) => {
     const key = Math.min(a, b) * NODE_COUNT + Math.max(a, b)
     if (a === b || edgeKeys.has(key)) return
     edgeKeys.add(key)
     adjacency[a].push(b)
     adjacency[b].push(a)
+    list.push([a, b])
   }
 
-  for (let i = 0; i < NODE_COUNT; i++) {
-    const candidates: { j: number; d: number }[] = []
-    for (let j = 0; j < NODE_COUNT; j++) {
-      if (i === j) continue
-      candidates.push({ j, d: distSq(i, j) })
-    }
-    candidates.sort((a, b) => a.d - b.d)
-    let added = 0
-    for (const c of candidates) {
-      if (added >= MAX_LINKS_PER_NODE) break
-      if (c.d > LINK_DIST * LINK_DIST && adjacency[i].length > 0) break
-      addEdge(i, c.j)
-      added++
+  for (let c = 0; c < CLUSTERS; c++) {
+    // backbone: center → its core port, ports ring the core
+    addEdge(c, CLUSTERS + c, backboneEdges)
+    addEdge(CLUSTERS + c, CLUSTERS + ((c + 1) % CLUSTERS), backboneEdges)
+
+    // local mesh: every member → its center, plus its nearest sibling
+    for (let m = 0; m < MEMBERS_PER_CLUSTER; m++) {
+      const i = CLUSTERS * 2 + c * MEMBERS_PER_CLUSTER + m
+      addEdge(i, c, localEdges)
+      let nearest = -1
+      let best = Infinity
+      for (let n = 0; n < MEMBERS_PER_CLUSTER; n++) {
+        if (n === m) continue
+        const j = CLUSTERS * 2 + c * MEMBERS_PER_CLUSTER + n
+        const d = distSq(i, j)
+        if (d < best) {
+          best = d
+          nearest = j
+        }
+      }
+      if (nearest !== -1) addEdge(i, nearest, localEdges)
     }
   }
 
-  const edges: [number, number][] = []
-  for (let i = 0; i < NODE_COUNT; i++) {
-    for (const j of adjacency[i]) {
-      if (j > i) edges.push([i, j])
-    }
+  const buildLines = (
+    list: [number, number][],
+    color: number,
+    opacity: number,
+  ) => {
+    const pos = new Float32Array(list.length * 6)
+    list.forEach(([a, b], i) => {
+      pos.set(nodePos.subarray(a * 3, a * 3 + 3), i * 6)
+      pos.set(nodePos.subarray(b * 3, b * 3 + 3), i * 6 + 3)
+    })
+    const geo = new BufferGeometry()
+    geo.setAttribute('position', new BufferAttribute(pos, 3))
+    const mat = new LineBasicMaterial({ color, transparent: true, opacity })
+    const segments = new LineSegments(geo, mat)
+    group.add(segments)
+    return { geo, mat }
   }
 
-  const linePos = new Float32Array(edges.length * 6)
-  edges.forEach(([a, b], i) => {
-    linePos.set(nodePos.subarray(a * 3, a * 3 + 3), i * 6)
-    linePos.set(nodePos.subarray(b * 3, b * 3 + 3), i * 6 + 3)
-  })
-  const lineGeo = new BufferGeometry()
-  lineGeo.setAttribute('position', new BufferAttribute(linePos, 3))
-  const lineMat = new LineBasicMaterial({
-    color: PALETTE.line,
-    transparent: true,
-    opacity: 0.09,
-  })
-  const lines = new LineSegments(lineGeo, lineMat)
-  group.add(lines)
+  const local = buildLines(localEdges, PALETTE.line, 0.13)
+  const backbone = buildLines(backboneEdges, PALETTE.node, 0.32)
 
   /* ---- packets: requests hopping across the graph ---- */
   const packets: Packet[] = []
@@ -162,10 +219,10 @@ export function initHeroScene(canvas: HTMLCanvasElement): () => void {
   packetGeo.setAttribute('position', new BufferAttribute(packetPos, 3))
   const packetMat = new PointsMaterial({
     color: PALETTE.packet,
-    size: 0.24,
+    size: 0.28,
     sizeAttenuation: true,
     transparent: true,
-    opacity: 0.9,
+    opacity: 0.95,
     depthWrite: false,
   })
   const packetPoints = new Points(packetGeo, packetMat)
@@ -320,8 +377,10 @@ export function initHeroScene(canvas: HTMLCanvasElement): () => void {
     ro.disconnect()
     document.removeEventListener('visibilitychange', onVisibility)
     if (parallaxEnabled) window.removeEventListener('pointermove', onPointerMove)
-    for (const geo of [nodeGeo, lineGeo, packetGeo, coreGeo, innerGeo]) geo.dispose()
-    for (const mat of [nodeMat, lineMat, packetMat, coreMat, innerMat]) mat.dispose()
+    for (const geo of [memberGeo, anchorGeo, local.geo, backbone.geo, packetGeo, coreGeo, innerGeo])
+      geo.dispose()
+    for (const mat of [memberMat, anchorMat, local.mat, backbone.mat, packetMat, coreMat, innerMat])
+      mat.dispose()
     renderer.dispose()
   }
 }
