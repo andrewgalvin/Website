@@ -60,14 +60,15 @@ const PANEL_H = SECTION_H * 3
 const RADIUS = 16
 const PAD = 26
 
-/** public aggregate stats from eSnipe production (counts only, 60s cache) */
+/** public aggregate stats from eSnipe production (counts only, 10s cache) */
 const STATS_URL = 'https://xdpizcaopjvulpoyyxum.supabase.co/functions/v1/portfolio-stats'
-const STATS_REFRESH_MS = 60_000
+const STATS_REFRESH_MS = 10_000
 
 interface LiveStats {
   activeSearches: number
   findsLastHour: number
-  secondsSinceLastPoll: number | null
+  /** seconds since the most recent find — the freshness heartbeat */
+  secondsSinceLastFind: number | null
 }
 /** css-px y offsets of the three section centers from the panel center */
 const SECTION_OFFSETS = [-SECTION_H, 0, SECTION_H]
@@ -205,7 +206,8 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
      pops at the measured rate. The simulation is the fallback. ---- */
   let live: LiveStats | null = null
   let liveFetchedAt = 0 // elapsed seconds when stats were fetched
-  let liveSeconds = 0 // ticking "last poll" readout
+  let liveSeconds = 0 // ticking "last find" readout (sawtooth, reset each fetch)
+  let liveFindsShown = 0 // finds counter that climbs between fetches
   let nextLivePopIn = 0
   // in live mode a cell stays lit ~25s after its pop, so the grid shows
   // the recent find stream rather than a meaningless fill count
@@ -250,13 +252,13 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
       ctx.stroke()
     }
     if (live) {
-      sectionLabel(ctx, 'LAST EBAY POLL', 0)
+      sectionLabel(ctx, 'LAST FIND', 0)
       sectionLabel(ctx, 'SEARCHES', SECTION_H, `showing 14 of ${live.activeSearches}`)
       sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'last hour')
       // operating signal: was the fleet fresh at the last refresh? An SLO,
       // not a stray number — blue dot = healthy, grey = delayed. Stays in
       // the one-accent palette (blue good, grey degraded).
-      const fresh = (live.secondsSinceLastPoll ?? 999) < 120
+      const fresh = (live.secondsSinceLastFind ?? 999) < 90
       ctx.font = `500 11px ${MONO}`
       const word = fresh ? 'healthy' : 'delayed'
       ctx.fillStyle = fresh ? BRAND : SLATE
@@ -436,7 +438,7 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   const alertPanel = makePanel(220, 70, (ctx) => {
     ctx.fillStyle = '#ffffff' // tinted by the material so the flash is free
     ctx.font = `500 ${live ? 42 : 48}px ${MONO}`
-    ctx.fillText(live ? live.findsLastHour.toLocaleString('en-US') : String(alerts), 0, 52)
+    ctx.fillText(live ? liveFindsShown.toLocaleString('en-US') : String(alerts), 0, 52)
   })
   alertPanel.mat.color.set(INK)
   alertPanel.mesh.position.set(-PANEL_W / 2 + PAD + 110, -(BASELINE_3 - 52 + 33), 4)
@@ -535,9 +537,10 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
 
     barMesh.visible = !live
     if (live) {
-      // section 1 becomes poll freshness: a true ticking readout, reset
-      // by every 60s refetch
-      const s = Math.max(0, Math.floor((live.secondsSinceLastPoll ?? 0) + (elapsed - liveFetchedAt)))
+      // section 1 is find freshness: ticks up from the fetched value and
+      // resets every ~10s refetch — a sawtooth heartbeat, not a number
+      // that climbs forever
+      const s = Math.max(0, Math.floor((live.secondsSinceLastFind ?? 0) + (elapsed - liveFetchedAt)))
       if (s !== liveSeconds) {
         liveSeconds = s
         rpsPanel.redraw()
@@ -603,6 +606,11 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
         cellAge[popSlot] = elapsed
         popK = 0
         numFlash = Math.max(numFlash, 0.5)
+        // a modeled find just landed: the counter climbs with it, so the
+        // big number moves between fetches instead of sitting frozen. The
+        // 10s refetch reconciles it back to the true server count.
+        liveFindsShown++
+        alertPanel.redraw()
       }
     } else {
       // alerts: a find every few seconds; the numeral flashes and the
@@ -731,7 +739,10 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
     const first = live === null
     live = stats
     liveFetchedAt = elapsed
-    liveSeconds = Math.max(0, stats.secondsSinceLastPoll ?? 0)
+    liveSeconds = Math.max(0, stats.secondsSinceLastFind ?? 0)
+    // reconcile the climbing finds counter to the true server count every
+    // refetch; between fetches it ticks up locally at the measured rate
+    liveFindsShown = stats.findsLastHour
     if (first) {
       // entering live mode: seed the grid mid-stream so it doesn't start
       // empty, and let the find-rate clock start immediately
@@ -748,15 +759,22 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   }
   const fetchStats = async () => {
     try {
-      const res = await fetch(STATS_URL, { signal: AbortSignal.timeout(4000) })
+      // no-store so each 10s tick gets the freshest server value; the
+      // function's own 10s cache still shields the database
+      const res = await fetch(STATS_URL, { cache: 'no-store', signal: AbortSignal.timeout(4000) })
       if (!res.ok) return
-      const data = (await res.json()) as Partial<LiveStats>
+      const data = (await res.json()) as {
+        activeSearches?: number
+        findsLastHour?: number
+        secondsSinceLastFind?: number
+        secondsSinceLastPoll?: number
+      }
       if (typeof data.activeSearches === 'number' && typeof data.findsLastHour === 'number') {
+        const fresh = data.secondsSinceLastFind ?? data.secondsSinceLastPoll
         applyLive({
           activeSearches: data.activeSearches,
           findsLastHour: data.findsLastHour,
-          secondsSinceLastPoll:
-            typeof data.secondsSinceLastPoll === 'number' ? data.secondsSinceLastPoll : null,
+          secondsSinceLastFind: typeof fresh === 'number' ? fresh : null,
         })
       }
     } catch {
