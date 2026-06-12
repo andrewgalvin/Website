@@ -8,13 +8,10 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
  * download). If WebGL is unavailable the hero simply stays typographic.
  *
  * Once loaded, the scene stays mounted across breakpoint changes (CSS hides
- * the canvas when narrow) and is disposed only on unmount. The ticker is
- * written imperatively from the scene's stats hook — real numbers from the
- * animation, no React re-renders.
+ * the canvas when narrow) and is disposed only on unmount.
  */
 export function HeroScene() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const tickerRef = useRef<HTMLParagraphElement>(null)
   // set exactly once, when the scene finishes loading; presence means loaded
   const disposeRef = useRef<(() => void) | null>(null)
   const [failed, setFailed] = useState(false)
@@ -32,13 +29,7 @@ export function HeroScene() {
       import('@/scene/heroScene')
         .then(({ initHeroScene }) => {
           if (cancelled) return
-          disposeRef.current = initHeroScene(canvas, {
-            onStats: ({ listings, grabbed }) => {
-              if (tickerRef.current) {
-                tickerRef.current.textContent = `▪ listings ${listings} · grabbed ${grabbed}`
-              }
-            },
-          })
+          disposeRef.current = initHeroScene(canvas)
         })
         .catch(() => setFailed(true))
     }
@@ -63,7 +54,6 @@ export function HeroScene() {
   return (
     <div className="hero-scene" aria-hidden="true">
       {!failed && <canvas id="hero-canvas" ref={canvasRef} />}
-      {!failed && <p className="hero-ticker" ref={tickerRef} />}
     </div>
   )
 }

@@ -8,97 +8,77 @@ import {
   Matrix4,
   Mesh,
   MeshBasicMaterial,
-  OrthographicCamera,
-  Plane,
+  PerspectiveCamera,
   PlaneGeometry,
   Quaternion,
-  Raycaster,
   Scene,
-  Shape,
-  ShapeGeometry,
   SRGBColorSpace,
-  Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three'
 
 /**
- * Hero accent: a live seating chart, the thing a ticket-resale monitor
- * actually watches. Three tiers (floor, mezzanine, balcony) stack above a
- * stage bar on one strict column grid, rendered dead flat and front-on so
- * every seat is a crisp, axis-aligned packet mark — the site's brand
- * square. The market runs continuously: listings pop in mid blue, a
- * polling sweep brushes each tier, and every few seconds a contiguous run
- * of seats gets sniped — it flashes, then settles deep navy. The pointer
- * is demand: seats under it swell and warm.
+ * Hero accent: "Instrument" — one console panel of the live monitoring
+ * system, center-right of the hero. Three sections share a single white
+ * card with internal hairlines: a big rolling requests-per-second counter
+ * with a scrolling sparkline, a sample of the monitor fleet blinking its
+ * heartbeat polls, and an alert counter that files each find into a grid
+ * of navy packets.
  *
- * The canvas is hidden below 64rem; the loop pauses when the tab is hidden
- * or the hero scrolls away; reduced-motion gets a composed still frame. A
- * stats hook reports real numbers from the simulation for the DOM ticker.
+ * The panel is a real object in space: it rests at a committed tilt toward
+ * the headline, the pointer steers a true perspective parallax, and
+ * hovering a section highlights it and accelerates its activity. Type is
+ * drawn on 2x canvas textures so it stays crisp; every number on screen
+ * comes from the animation itself. The loop pauses when the tab is hidden
+ * or the hero scrolls away, and reduced-motion visitors get one composed
+ * still.
  */
 
-const PALETTE = {
-  empty: 0xe7ecf2, // bare seat: one quiet tone, no noise
-  listed: 0x8fb8e0, // mid sky: inventory on the market
-  grabbed: 0x24416b, // deep navy: ours now
-  flash: 0x5b9bd5, // the moment of the catch
-  heat: 0x5b9bd5, // demand under the cursor: the same clear blue, stronger
-  stage: 0x14181f, // ink, used at very low opacity
-  panel: 0xf3f6fa, // tier card fill, like the site's cards
-  panelEdge: 0xdde4ec, // tier card hairline
-}
-
-/** the venue: tiers of rows stacked over the stage, one shared column grid
-    with a center aisle splitting each tier into two banks */
-const COLS = 12
-const COL_PITCH = 0.5
-const ROW_PITCH = 0.5
-const SEAT_SIZE = 0.36
-const AISLE = 0.45
-const TIERS = [
-  { rows: 4, y0: 1.05, label: 'FLOOR' },
-  { rows: 3, y0: 3.85, label: 'MEZZANINE' },
-  { rows: 3, y0: 6.15, label: 'BALCONY' },
-]
-const SEAT_COUNT = TIERS.reduce((n, tier) => n + tier.rows * COLS, 0)
-
-const enum SeatState {
-  Empty,
-  Listed,
-  Grabbed,
-}
-
-interface Seat {
-  state: SeatState
-  x: number
-  y: number
-  /** boot reveal delay, seconds */
-  revealAt: number
-  /** scale pulse animation clock, -1 when idle */
-  pulseT: number
-  /** when a grabbed seat releases back to the market (elapsed seconds) */
-  releaseAt: number
-  /** current displayed color, eased toward target every frame */
-  color: Color
-  /** cursor demand 0..1, eased */
-  heat: number
-  /** sweep highlight 0..1, decays */
-  sweep: number
-  tier: number
-  row: number
-  col: number
-}
-
 export interface HeroSceneStats {
-  /** seats currently listed on the market */
-  listings: number
-  /** seats grabbed since boot */
-  grabbed: number
+  /** requests per second shown on the big counter */
+  rps: number
+  /** alerts filed since boot */
+  alerts: number
 }
 
 export interface HeroSceneHooks {
   onStats?: (stats: HeroSceneStats) => void
 }
+
+const INK = '#14181f'
+const SLATE = '#4b5869'
+const BRAND = '#3d5a80'
+const SKY = '#5b9bd5'
+const NAVY = '#2b4a73'
+const PANEL_FILL = '#ffffff'
+const HAIRLINE = '#dde4ec'
+const MONO = '"JetBrains Mono", ui-monospace, monospace'
+
+const PANEL_W = 432
+const SECTION_H = 152
+const PANEL_H = SECTION_H * 3
+const RADIUS = 16
+const PAD = 26
+/** css-px y offsets of the three section centers from the panel center */
+const SECTION_OFFSETS = [-SECTION_H, 0, SECTION_H]
+/** canvas-2d textures draw at 2x and minify, which keeps the type crisp */
+const TEXT_SCALE = 2
+
+const BAR_COUNT = 40
+const BAR_PITCH = 5
+const BAR_RIGHT = PANEL_W / 2 - PAD - 1
+/** shared baseline (css px below the section center) for numeral and bars */
+const BASELINE_1 = 44
+const MON_COUNT = 14
+const MON_PITCH = 26
+const MON_X0 = -PANEL_W / 2 + PAD + 7
+const MON_Y = 22
+const CELL_COUNT = 18
+const CELL_PITCH = 22
+const GRID_W = 6 * 14 + 5 * 8
+const CELL_X0 = PANEL_W / 2 - PAD - GRID_W + 7
+const CELL_Y0 = -4
+const BASELINE_3 = 47
 
 export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks = {}): () => void {
   const prefersReduced = matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -112,366 +92,489 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
   const scene = new Scene()
-  // straight-on orthographic: the chart is a flat graphic, not a 3D set.
-  // Framed so the chart sits between the header and the stats row.
-  const CY = 2.87 // vertical center of the composition
-  const FRUSTUM = 6.0
-  const camera = new OrthographicCamera(-1, 1, 1, -1, 0.1, 50)
-  camera.position.set(0, CY, 10)
-  camera.lookAt(0, CY, 0)
+  // perspective camera tuned so 1 world unit = 1 css px at the panel's
+  // plane: layout math reads like CSS, but the tilt and parallax are real
+  const FOV = 23
+  const camera = new PerspectiveCamera(FOV, 1, 100, 6000)
+  // a telemetry console is a precise, axis-aligned object: it rests flat
+  // and shows its depth when the visitor moves — pointer parallax rotates
+  // it, hover lifts it, the shadow sells the elevation
+  const TILT_Y = 0
+  const TILT_X = 0
 
-  const group = new Group()
-  scene.add(group)
+  const cluster = new Group()
+  scene.add(cluster)
+  const clusterBase = { x: 0, y: 0 }
+  let viewW = 0
+  let viewH = 0
 
-  /* ---- seats on the grid, two banks per tier around the aisle ---- */
-  const seats: Seat[] = []
-  const xLeft = -((COLS - 1) * COL_PITCH + AISLE) / 2
-  const seatX = (c: number) => xLeft + c * COL_PITCH + (c >= COLS / 2 ? AISLE : 0)
-  TIERS.forEach((tier, t) => {
-    for (let r = 0; r < tier.rows; r++) {
-      for (let c = 0; c < COLS; c++) {
-        seats.push({
-          state: Math.random() < 0.42 ? SeatState.Listed : SeatState.Empty,
-          x: seatX(c),
-          y: tier.y0 + r * ROW_PITCH,
-          revealAt: 0.1 + t * 0.22 + r * 0.07 + c * 0.018,
-          pulseT: -1,
-          releaseAt: Infinity,
-          color: new Color(PALETTE.empty),
-          heat: 0,
-          sweep: 0,
-          tier: t,
-          row: r,
-          col: c,
-        })
-      }
+  const m4 = new Matrix4()
+  const q = new Quaternion()
+  const vPos = new Vector3()
+  const vScl = new Vector3()
+  const tmpColor = new Color()
+  const skyC = new Color(SKY)
+  const navyC = new Color(NAVY)
+  const inkC = new Color(INK)
+  const paleC = new Color('#e8eef5')
+
+  /* ---- live state: every figure on screen comes from here ---- */
+  let elapsed = 0
+  let rpsValue = 0
+  let rpsShown = 0
+  let lastNumeralAt = -1
+  let wanderTarget = 598 + Math.random() * 26
+  let nextWanderAt = 0
+  let sampleIn = 0.18
+  // boot with plausible history so the sparkline never starts flat: a
+  // breathing baseline with texture and a gentle rise into the present —
+  // the tail must never read as traffic dying under a healthy number
+  const fakeSample = (i: number) =>
+    588 +
+    (i / BAR_COUNT) * 26 +
+    Math.sin(i * 0.55) * 20 +
+    Math.sin(i * 0.17 + 2) * 12 +
+    (Math.random() - 0.5) * 24
+  const samples = Array.from({ length: BAR_COUNT }, (_, i) => fakeSample(i))
+  const monTimer = Array.from({ length: MON_COUNT }, () => 0.2 + Math.random() * 1.8)
+  const monFlash = Array.from({ length: MON_COUNT }, () => (Math.random() < 0.3 ? Math.random() : 0))
+  // a found grid that starts mid-story, not empty
+  let alerts = 4 + Math.floor(Math.random() * 3)
+  let alertIn = 3 + Math.random() * 2
+  let popSlot = -1
+  let popK = 1
+  let numFlash = 0
+
+  /* ---- crisp text: canvas-2d drawn at 2x onto plane-mapped textures ---- */
+  interface Panel {
+    mesh: Mesh
+    mat: MeshBasicMaterial
+    redraw: () => void
+    dispose: () => void
+  }
+  const panels: Panel[] = []
+
+  const makePanel = (w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void): Panel => {
+    const el = document.createElement('canvas')
+    el.width = w * TEXT_SCALE
+    el.height = h * TEXT_SCALE
+    const ctx = el.getContext('2d')
+    const tex = new CanvasTexture(el)
+    tex.colorSpace = SRGBColorSpace
+    const mat = new MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
+    const geo = new PlaneGeometry(w, h)
+    const mesh = new Mesh(geo, mat)
+    const redraw = () => {
+      if (!ctx) return
+      ctx.setTransform(TEXT_SCALE, 0, 0, TEXT_SCALE, 0, 0)
+      ctx.clearRect(0, 0, w, h)
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'alphabetic'
+      draw(ctx)
+      tex.needsUpdate = true
+    }
+    redraw()
+    const panel = {
+      mesh,
+      mat,
+      redraw,
+      dispose: () => {
+        geo.dispose()
+        mat.dispose()
+        tex.dispose()
+      },
+    }
+    panels.push(panel)
+    return panel
+  }
+
+  /* ---- the console base: one card, three sections, internal hairlines.
+     All static furniture (labels, metas, placeholders) bakes in here. ---- */
+  const sectionLabel = (
+    ctx: CanvasRenderingContext2D,
+    label: string,
+    topY: number,
+    meta?: string,
+  ) => {
+    ctx.fillStyle = BRAND
+    ctx.fillRect(PAD, topY + 27, 5, 5)
+    ctx.fillStyle = SLATE
+    ctx.font = `500 11px ${MONO}`
+    ctx.letterSpacing = '1.6px'
+    ctx.fillText(label, PAD + 12, topY + 35)
+    ctx.letterSpacing = '0px'
+    if (meta) {
+      ctx.font = `400 11px ${MONO}`
+      ctx.textAlign = 'right'
+      ctx.fillText(meta, PANEL_W - PAD, topY + 35)
+      ctx.textAlign = 'left'
+    }
+  }
+
+  const consoleBase = makePanel(PANEL_W, PANEL_H, (ctx) => {
+    ctx.beginPath()
+    ctx.roundRect(0.5, 0.5, PANEL_W - 1, PANEL_H - 1, RADIUS)
+    ctx.fillStyle = PANEL_FILL
+    ctx.fill()
+    ctx.lineWidth = 1
+    ctx.strokeStyle = HAIRLINE
+    ctx.stroke()
+    // internal section dividers, inset like a console's rule lines
+    for (const yy of [SECTION_H, SECTION_H * 2]) {
+      ctx.beginPath()
+      ctx.moveTo(22, yy + 0.5)
+      ctx.lineTo(PANEL_W - 22, yy + 0.5)
+      ctx.stroke()
+    }
+    sectionLabel(ctx, 'REQUESTS / SEC', 0)
+    sectionLabel(ctx, 'MONITORS', SECTION_H, 'showing 14 of 285')
+    // "finds", not "alerts": on a resale monitor a hit is a win, and the
+    // label should read as good news at a glance
+    sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'last hour')
+    // alert grid placeholders
+    ctx.strokeStyle = HAIRLINE
+    for (let n = 0; n < CELL_COUNT; n++) {
+      const x = PANEL_W / 2 + CELL_X0 + (n % 6) * CELL_PITCH - 7
+      const y = SECTION_H * 2 + SECTION_H / 2 + CELL_Y0 + Math.floor(n / 6) * CELL_PITCH - 7
+      ctx.beginPath()
+      ctx.roundRect(x + 0.5, y + 0.5, 13, 13, 4)
+      ctx.stroke()
     }
   })
-  // some seats start already grabbed, so the navy reads immediately
-  for (const seat of seats) {
-    if (seat.state === SeatState.Listed && Math.random() < 0.16) {
-      seat.state = SeatState.Grabbed
-      seat.releaseAt = 8 + Math.random() * 20
+
+  // one soft shadow under the one console: elevation, cheaply
+  const shadowSprite = (() => {
+    const padPx = 46
+    const el = document.createElement('canvas')
+    el.width = (PANEL_W + padPx * 2) / 2
+    el.height = (PANEL_H + padPx * 2) / 2
+    const ctx = el.getContext('2d')
+    if (ctx) {
+      ctx.filter = 'blur(13px)'
+      ctx.fillStyle = '#0c1320'
+      ctx.beginPath()
+      ctx.roundRect(padPx / 2, padPx / 2, PANEL_W / 2, PANEL_H / 2, RADIUS / 2)
+      ctx.fill()
     }
-  }
-  const tierStart = (t: number) =>
-    TIERS.slice(0, t).reduce((n, tier) => n + tier.rows * COLS, 0)
-
-  /* ---- seat geometry: the packet mark, flat and axis-aligned ---- */
-  const roundedSquare = (() => {
-    const half = SEAT_SIZE / 2
-    const radius = SEAT_SIZE * 0.28
-    const shape = new Shape()
-    shape.moveTo(-half + radius, -half)
-    shape.lineTo(half - radius, -half)
-    shape.quadraticCurveTo(half, -half, half, -half + radius)
-    shape.lineTo(half, half - radius)
-    shape.quadraticCurveTo(half, half, half - radius, half)
-    shape.lineTo(-half + radius, half)
-    shape.quadraticCurveTo(-half, half, -half, half - radius)
-    shape.lineTo(-half, -half + radius)
-    shape.quadraticCurveTo(-half, -half, -half + radius, -half)
-    return new ShapeGeometry(shape, 8)
-  })()
-
-  const seatMat = new MeshBasicMaterial({ color: 0xffffff })
-  const mesh = new InstancedMesh(roundedSquare, seatMat, SEAT_COUNT)
-  mesh.instanceMatrix.setUsage(DynamicDrawUsage)
-  mesh.frustumCulled = false
-  group.add(mesh)
-
-  const stateColor = {
-    [SeatState.Empty]: new Color(PALETTE.empty),
-    [SeatState.Listed]: new Color(PALETTE.listed),
-    [SeatState.Grabbed]: new Color(PALETTE.grabbed),
-  }
-  const flashColor = new Color(PALETTE.flash)
-  const heatColor = new Color(PALETTE.heat)
-  const tmpColor = new Color()
-
-  /* ---- shared rounded-rect builder for panels and the stage bar ---- */
-  const disposables: Array<{ dispose: () => void }> = []
-  const roundedRect = (w: number, h: number, r: number) => {
-    const shape = new Shape()
-    shape.moveTo(-w / 2 + r, -h / 2)
-    shape.lineTo(w / 2 - r, -h / 2)
-    shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r)
-    shape.lineTo(w / 2, h / 2 - r)
-    shape.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2)
-    shape.lineTo(-w / 2 + r, h / 2)
-    shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r)
-    shape.lineTo(-w / 2, -h / 2 + r)
-    shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2)
-    return new ShapeGeometry(shape, 8)
-  }
-  const addRect = (
-    w: number,
-    h: number,
-    r: number,
-    color: number,
-    opacity: number,
-    x: number,
-    y: number,
-    z: number,
-  ) => {
-    const geo = roundedRect(w, h, r)
-    const mat = new MeshBasicMaterial({ color, transparent: true, opacity })
-    const m = new Mesh(geo, mat)
-    m.position.set(x, y, z)
-    group.add(m)
-    disposables.push(geo, mat)
-    return m
-  }
-
-  /* ---- mono labels, drawn once to canvas textures in the site's font ---- */
-  const addLabel = (text: string, x: number, y: number, opacity: number, anchorLeft = true) => {
-    const px = 96 // glyph size on the texture; world height stays small
-    const pad = 24
-    const measure = document.createElement('canvas').getContext('2d')!
-    measure.font = `600 ${px}px "JetBrains Mono", ui-monospace, monospace`
-    const textW = measure.measureText(text).width + text.length * px * 0.14
-    const cw = Math.ceil(textW + pad * 2)
-    const ch = Math.ceil(px * 1.5)
-    const c2d = document.createElement('canvas')
-    c2d.width = cw
-    c2d.height = ch
-    const ctx = c2d.getContext('2d')!
-    ctx.font = `600 ${px}px "JetBrains Mono", ui-monospace, monospace`
-    ctx.fillStyle = '#4b5869'
-    ctx.textBaseline = 'middle'
-    let cx = pad
-    for (const ch2 of text) {
-      ctx.fillText(ch2, cx, ch / 2)
-      cx += ctx.measureText(ch2).width + px * 0.14 // letterspacing by hand
-    }
-    const tex = new CanvasTexture(c2d)
+    const tex = new CanvasTexture(el)
     tex.colorSpace = SRGBColorSpace
-    tex.anisotropy = 4
-    const worldH = 0.24
-    const worldW = worldH * (cw / ch)
-    const geo = new PlaneGeometry(worldW, worldH)
-    const mat = new MeshBasicMaterial({ map: tex, transparent: true, opacity })
-    const m = new Mesh(geo, mat)
-    m.position.set(anchorLeft ? x + worldW / 2 : x, y, 0.02)
-    group.add(m)
-    disposables.push(geo, mat, tex)
-    return m
-  }
-
-  /* ---- tier panels: the site's card language behind each bank ---- */
-  const chartW = (COLS - 1) * COL_PITCH + AISLE + SEAT_SIZE
-  const PANEL_PAD = 0.34
-  const panelW = chartW + PANEL_PAD * 2
-  for (const tier of TIERS) {
-    const seatsH = (tier.rows - 1) * ROW_PITCH + SEAT_SIZE
-    const panelH = seatsH + PANEL_PAD * 2 + 0.34 // headroom for the label
-    const cy = tier.y0 + ((tier.rows - 1) * ROW_PITCH) / 2 - 0.06
-    addRect(panelW + 0.04, panelH + 0.04, 0.34, PALETTE.panelEdge, 0.9, 0, cy, -0.03)
-    addRect(panelW, panelH, 0.32, PALETTE.panel, 0.92, 0, cy, -0.02)
-    addLabel(tier.label, -panelW / 2 + 0.3, cy + panelH / 2 - 0.34, 0.75)
-  }
-
-  /* ---- the stage: one quiet ink bar the whole chart points at ---- */
-  const stage = (() => {
-    const bar = addRect(3.4, 0.44, 0.22, PALETTE.stage, 0.1, 0, 0, 0)
-    addLabel('STAGE', 0, 0, 0.5, false)
-    return bar
+    return { tex, w: PANEL_W + padPx * 2, h: PANEL_H + padPx * 2 }
   })()
-  void stage
+  const shadowMat = new MeshBasicMaterial({
+    map: shadowSprite.tex,
+    transparent: true,
+    opacity: 0.16,
+    depthWrite: false,
+  })
+  const shadow = new Mesh(new PlaneGeometry(shadowSprite.w, shadowSprite.h), shadowMat)
+  shadow.position.set(8, -16, -18)
+  shadow.renderOrder = -1
+  cluster.add(shadow)
 
-  /* ---- pointer: slight parallax + demand ---- */
-  const pointer = new Vector2()
-  const raycaster = new Raycaster()
-  const chartPlane = new Plane(new Vector3(0, 0, 1), 0)
-  const demand = new Vector3()
-  let elapsed = 0
-  let pointerAt = -Infinity
+  consoleBase.mesh.renderOrder = 0
+  cluster.add(consoleBase.mesh)
+
+  /* ---- section hover highlights + activity state ---- */
+  interface Section {
+    group: Group
+    hover: number
+    highlightMat: MeshBasicMaterial
+  }
+  const sections: Section[] = []
+  const highlightGeo = new PlaneGeometry(PANEL_W - 14, SECTION_H - 14)
+  for (let i = 0; i < 3; i++) {
+    const group = new Group()
+    group.position.set(0, -SECTION_OFFSETS[i], 6)
+    const highlightMat = new MeshBasicMaterial({
+      color: SKY,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    })
+    const highlight = new Mesh(highlightGeo, highlightMat)
+    highlight.position.z = -2
+    highlight.renderOrder = 0.5
+    group.add(highlight)
+    cluster.add(group)
+    sections.push({ group, hover: 0, highlightMat })
+  }
+
+  /* ---- section 1: the big rolling req/s numeral + scrolling sparkline ---- */
+  const rpsPanel = makePanel(220, 84, (ctx) => {
+    ctx.fillStyle = INK
+    ctx.font = `500 64px ${MONO}`
+    ctx.fillText(String(rpsShown), 0, 62)
+  })
+  rpsPanel.mesh.position.set(-PANEL_W / 2 + PAD + 110, -(BASELINE_1 - 62 + 40), 4)
+  rpsPanel.mesh.renderOrder = 1
+  sections[0].group.add(rpsPanel.mesh)
+
+  const barGeo = new PlaneGeometry(2, 1)
+  barGeo.translate(0, 0.5, 0) // scale grows the bar up from its baseline
+  const barMat = new MeshBasicMaterial({ transparent: true, opacity: 0.92, depthWrite: false })
+  const barMesh = new InstancedMesh(barGeo, barMat, BAR_COUNT)
+  barMesh.frustumCulled = false
+  barMesh.renderOrder = 1
+  barMesh.instanceMatrix.setUsage(DynamicDrawUsage)
+  for (let j = 0; j < BAR_COUNT; j++) {
+    barMesh.setColorAt(j, j === BAR_COUNT - 1 ? skyC : tmpColor.set(BRAND))
+  }
+  sections[0].group.add(barMesh)
+
+  const layoutBars = () => {
+    for (let j = 0; j < BAR_COUNT; j++) {
+      const v = samples[j]
+      const h = Math.min(46, Math.max(6, 5 + ((v - 545) / 110) * 40))
+      // the newest bar is the current value: wider, so the chart visibly
+      // connects to the big numeral beside it
+      const wide = j === BAR_COUNT - 1 ? 1.8 : 1
+      m4.compose(
+        vPos.set(BAR_RIGHT - (BAR_COUNT - 1 - j) * BAR_PITCH, -BASELINE_1, 4),
+        q,
+        vScl.set(wide, h, 1),
+      )
+      barMesh.setMatrixAt(j, m4)
+    }
+    barMesh.instanceMatrix.needsUpdate = true
+  }
+  layoutBars()
+
+  /* ---- shared packet-square sprite for monitors and alert cells ---- */
+  const squareEl = document.createElement('canvas')
+  squareEl.width = 64
+  squareEl.height = 64
+  const squareCtx = squareEl.getContext('2d')
+  if (squareCtx) {
+    squareCtx.beginPath()
+    squareCtx.roundRect(0, 0, 64, 64, 18)
+    squareCtx.fillStyle = '#ffffff'
+    squareCtx.fill()
+  }
+  const squareTex = new CanvasTexture(squareEl)
+  squareTex.colorSpace = SRGBColorSpace
+  const squareMat = new MeshBasicMaterial({ map: squareTex, transparent: true, depthWrite: false })
+  const squareGeo = new PlaneGeometry(14, 14)
+
+  /* ---- section 2: heartbeat polls across a sample of the fleet ---- */
+  const monMesh = new InstancedMesh(squareGeo, squareMat, MON_COUNT)
+  monMesh.frustumCulled = false
+  monMesh.renderOrder = 1
+  monMesh.instanceMatrix.setUsage(DynamicDrawUsage)
+  sections[1].group.add(monMesh)
+
+  /* ---- section 3: alert counter + the grid the finds file into ---- */
+  const alertPanel = makePanel(160, 70, (ctx) => {
+    ctx.fillStyle = '#ffffff' // tinted by the material so the flash is free
+    ctx.font = `500 48px ${MONO}`
+    ctx.fillText(String(alerts), 0, 52)
+  })
+  alertPanel.mat.color.set(INK)
+  alertPanel.mesh.position.set(-PANEL_W / 2 + PAD + 80, -(BASELINE_3 - 52 + 33), 4)
+  alertPanel.mesh.renderOrder = 1
+  sections[2].group.add(alertPanel.mesh)
+
+  const cellMesh = new InstancedMesh(squareGeo, squareMat, CELL_COUNT)
+  cellMesh.frustumCulled = false
+  cellMesh.renderOrder = 1
+  cellMesh.instanceMatrix.setUsage(DynamicDrawUsage)
+  sections[2].group.add(cellMesh)
+
+  const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+
+  const updateCells = () => {
+    const filled = Math.min(alerts, CELL_COUNT)
+    const k = easeOutCubic(Math.min(1, popK))
+    for (let n = 0; n < CELL_COUNT; n++) {
+      const isPop = n === popSlot && popK < 1
+      const on = n < filled
+      const sc = on ? (isPop ? 1 + 0.6 * (1 - k) * (1 - k) : 1) : 0.0001
+      m4.compose(
+        vPos.set(CELL_X0 + (n % 6) * CELL_PITCH, -(CELL_Y0 + Math.floor(n / 6) * CELL_PITCH), 4),
+        q,
+        vScl.set(sc, sc, 1),
+      )
+      cellMesh.setMatrixAt(n, m4)
+      if (isPop) tmpColor.copy(skyC).lerp(navyC, k)
+      else tmpColor.copy(navyC)
+      cellMesh.setColorAt(n, tmpColor)
+    }
+    cellMesh.instanceMatrix.needsUpdate = true
+    if (cellMesh.instanceColor) cellMesh.instanceColor.needsUpdate = true
+  }
+
+  /* ---- pointer: section hover and true parallax ---- */
+  const pointerClient = { x: 0, y: 0 }
+  const pointerNorm = { x: 0, y: 0 }
+  let pointerHas = false
+  let hovered = -1
+  let parX = 0
+  let parY = 0
+  let lift = 0
 
   const onPointerMove = (e: PointerEvent) => {
-    const rect = canvas.getBoundingClientRect()
-    if (rect.width === 0 || rect.height === 0) return
-    pointer.set(
-      ((e.clientX - rect.left) / rect.width) * 2 - 1,
-      -((e.clientY - rect.top) / rect.height) * 2 + 1,
-    )
-    raycaster.setFromCamera(pointer, camera)
-    if (raycaster.ray.intersectPlane(chartPlane, demand)) pointerAt = elapsed
+    pointerClient.x = e.clientX
+    pointerClient.y = e.clientY
+    pointerNorm.x = (e.clientX / window.innerWidth) * 2 - 1
+    pointerNorm.y = (e.clientY / window.innerHeight) * 2 - 1
+    pointerHas = true
   }
   const parallaxEnabled = !prefersReduced && matchMedia('(pointer: fine)').matches
   if (parallaxEnabled) window.addEventListener('pointermove', onPointerMove, { passive: true })
 
-  const demandActive = () => parallaxEnabled && elapsed - pointerAt < 2
-
-  /* ---- the market simulation ---- */
-  let listings = seats.filter((seat) => seat.state === SeatState.Listed).length
-  let grabbedTotal = 0
-  let nextListingAt = 0.5
-  let nextSnipeAt = 2.3 + Math.random() * 1
-  const sweepAt = TIERS.map((_, t) => 1.6 + t * 1.9)
-  const sweepX = TIERS.map(() => -Infinity)
-
-  const listRandomSeat = () => {
-    const empties = seats.filter((seat) => seat.state === SeatState.Empty)
-    if (empties.length === 0) return
-    const seat = empties[Math.floor(Math.random() * empties.length)]
-    seat.state = SeatState.Listed
-    seat.pulseT = 0
-    listings++
-  }
-
-  const snipe = () => {
-    // find a contiguous run of listed seats in a row and take it; a real
-    // monitor doesn't give up because the first row it checked was thin
-    for (let attempt = 0; attempt < 8; attempt++) {
-      const t = Math.floor(Math.random() * TIERS.length)
-      const row = Math.floor(Math.random() * TIERS[t].rows)
-      const base = tierStart(t) + row * COLS
-      const runs: Array<{ start: number; len: number }> = []
-      let runStart = -1
-      for (let c = 0; c <= COLS; c++) {
-        // a run cannot span the aisle: close any open run at the gap, then
-        // the right bank may start its own
-        if (c === COLS / 2 && runStart >= 0) {
-          runs.push({ start: runStart, len: c - runStart })
-          runStart = -1
-        }
-        const listed = c < COLS && seats[base + c].state === SeatState.Listed
-        if (listed && runStart < 0) runStart = c
-        if (!listed && runStart >= 0) {
-          runs.push({ start: runStart, len: c - runStart })
-          runStart = -1
-        }
-      }
-      const candidates = runs.filter((r) => r.len >= 2)
-      if (candidates.length === 0) continue
-      const run = candidates[Math.floor(Math.random() * candidates.length)]
-      const take = Math.min(run.len, 2 + Math.floor(Math.random() * 5))
-      for (let c = run.start; c < run.start + take; c++) {
-        const seat = seats[base + c]
-        seat.state = SeatState.Grabbed
-        seat.pulseT = -0.07 * (c - run.start) // left-to-right ripple
-        seat.releaseAt = elapsed + 14 + Math.random() * 18
-        listings--
-        grabbedTotal++
-      }
-      return
+  const updateHover = () => {
+    hovered = -1
+    if (!pointerHas) return
+    const rect = canvas.getBoundingClientRect()
+    const lx = pointerClient.x - rect.left
+    const ly = pointerClient.y - rect.top
+    if (lx < 0 || ly < 0 || lx > rect.width || ly > rect.height) return
+    const s = cluster.scale.x
+    const dx = lx - (clusterBase.x + parX)
+    const dy = ly - (clusterBase.y + parY)
+    if (Math.abs(dx) > (PANEL_W / 2) * s) return
+    for (let i = 0; i < sections.length; i++) {
+      if (Math.abs(dy - SECTION_OFFSETS[i] * s) <= (SECTION_H / 2) * s) hovered = i
     }
-    listRandomSeat() // market was thin everywhere; it moves on
   }
 
-  /* ---- stats for the DOM ticker ---- */
+  /* ---- stats hook: the console's own numbers ---- */
   let statsAt = 0
   const tickStats = () => {
+    if (prefersReduced) return
     if (elapsed - statsAt < 0.5) return
     statsAt = elapsed
-    hooks.onStats?.({ listings, grabbed: grabbedTotal })
+    hooks.onStats?.({ rps: rpsValue, alerts })
   }
 
-  /* ---- per-frame seat update ---- */
-  const tmpMat = new Matrix4()
-  const unitQuat = new Quaternion()
-  const tmpPos = new Vector3()
-  const tmpScale = new Vector3()
+  /* ---- one tick of the console ---- */
+  const step = (dt: number) => {
+    elapsed += dt
 
-  const composeSeat = (seat: Seat, index: number, boot: number) => {
-    // boot reveal: rows pop in from the stage upward
-    const reveal = prefersReduced ? 1 : Math.max(0, Math.min(1, (boot - seat.revealAt) / 0.3))
-    let scale = reveal < 1 ? reveal * (2 - reveal) : 1 // ease-out
-
-    if (seat.pulseT >= 0 && seat.pulseT < 0.45) {
-      scale *= 1 + Math.sin((seat.pulseT / 0.45) * Math.PI) * 0.32
+    let maxHover = 0
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i]
+      const goal = hovered === i ? 1 : 0
+      section.hover += (goal - section.hover) * Math.min(1, dt * 6)
+      maxHover = Math.max(maxHover, section.hover)
+      section.highlightMat.opacity = 0.05 * section.hover
+      section.group.position.z = 6 + 6 * section.hover
     }
-    scale *= 1 + seat.heat * 0.16
+    // the whole console lifts slightly toward the camera under attention
+    lift += (18 * maxHover - lift) * Math.min(1, dt * 6)
+    shadowMat.opacity = 0.16 - 0.04 * maxHover
 
-    tmpPos.set(seat.x, seat.y, 0)
-    tmpScale.setScalar(Math.max(0.0001, scale))
-    tmpMat.compose(tmpPos, unitQuat, tmpScale)
-    mesh.setMatrixAt(index, tmpMat)
+    // requests/sec: spin up, then a lively smoothed walk; hover widens the
+    // jitter like a load spike. The wander retargets often enough that the
+    // sparkline always breathes.
+    if (elapsed >= nextWanderAt) {
+      wanderTarget = 565 + Math.random() * 80
+      nextWanderAt = elapsed + 1.1 + Math.random() * 1.2
+    }
+    const boot = Math.min(1, elapsed / 1.6)
+    const target = wanderTarget * easeOutCubic(boot)
+    const amp = 170 * (1 + 1.6 * sections[0].hover)
+    rpsValue += (target - rpsValue) * Math.min(1, dt * 2.4) + (Math.random() - 0.5) * dt * amp
+    rpsValue = Math.min(680, Math.max(0, rpsValue))
 
-    // color: state base → sweep brighten → flash pulse → demand heat
-    tmpColor.copy(stateColor[seat.state])
-    if (seat.sweep > 0) tmpColor.lerp(flashColor, seat.sweep * 0.4)
-    if (seat.pulseT >= 0 && seat.pulseT < 0.45) {
-      tmpColor.lerp(flashColor, Math.sin((seat.pulseT / 0.45) * Math.PI))
+    const shown = Math.round(rpsValue)
+    if (shown !== rpsShown && elapsed - lastNumeralAt >= 0.125) {
+      rpsShown = shown
+      lastNumeralAt = elapsed
+      rpsPanel.redraw()
     }
-    // grabbed seats keep their navy under the cursor; they only swell
-    if (seat.heat > 0 && seat.state !== SeatState.Grabbed) {
-      tmpColor.lerp(heatColor, seat.heat * 0.55)
+
+    sampleIn -= dt * (1 + 0.7 * sections[0].hover)
+    if (sampleIn <= 0) {
+      sampleIn += 0.18
+      samples.shift()
+      // sampled with its own texture so neighbours never flatline together
+      samples.push(rpsValue + (Math.random() - 0.5) * 24)
+      layoutBars()
     }
-    seat.color.lerp(tmpColor, prefersReduced ? 1 : 0.25)
-    mesh.setColorAt(index, seat.color)
+
+    // monitors: every packet polls on its own cadence; hover raises tempo
+    for (let i = 0; i < MON_COUNT; i++) {
+      monTimer[i] -= dt * (1 + 1.3 * sections[1].hover)
+      if (monTimer[i] <= 0) {
+        monFlash[i] = 1
+        monTimer[i] = 0.6 + Math.random() * 1.4
+      }
+      monFlash[i] *= Math.exp(-dt * 4.5)
+      tmpColor.copy(paleC).lerp(skyC, Math.min(1, monFlash[i] * 1.15))
+      monMesh.setColorAt(i, tmpColor)
+      const ms = 1 + 0.14 * monFlash[i]
+      m4.compose(vPos.set(MON_X0 + i * MON_PITCH, -MON_Y, 4), q, vScl.set(ms, ms, 1))
+      monMesh.setMatrixAt(i, m4)
+    }
+    monMesh.instanceMatrix.needsUpdate = true
+    if (monMesh.instanceColor) monMesh.instanceColor.needsUpdate = true
+
+    // alerts: a find every few seconds; the numeral flashes and the packet
+    // files into the grid, recycling the oldest slot once full
+    alertIn -= dt * (1 + 2.2 * sections[2].hover)
+    if (alertIn <= 0) {
+      alerts++
+      alertIn = 4 + Math.random() * 3
+      popSlot = (alerts - 1) % CELL_COUNT
+      popK = 0
+      numFlash = 1
+      alertPanel.redraw()
+    }
+    if (popK < 1) popK = Math.min(1, popK + dt / 0.45)
+    numFlash *= Math.exp(-dt * 3)
+    alertPanel.mat.color.copy(inkC).lerp(skyC, Math.min(1, numFlash * 0.9))
+    alertPanel.mesh.scale.setScalar(1 + 0.1 * numFlash)
+    updateCells()
+
+    tickStats()
   }
 
-  const updateSeats = (dt: number, boot: number) => {
-    const active = demandActive()
-    for (let i = 0; i < SEAT_COUNT; i++) {
-      const seat = seats[i]
-
-      if (seat.pulseT >= 0) {
-        seat.pulseT += dt
-        if (seat.pulseT > 0.6) seat.pulseT = -1
-      }
-      if (seat.sweep > 0) seat.sweep = Math.max(0, seat.sweep - dt * 2.2)
-
-      // grabbed inventory cycles back onto the market
-      if (seat.state === SeatState.Grabbed && elapsed >= seat.releaseAt) {
-        seat.state = SeatState.Empty
-        seat.releaseAt = Infinity
-      }
-
-      // demand follows the cursor
-      const dx = seat.x - demand.x
-      const dy = seat.y - demand.y
-      const dSq = dx * dx + dy * dy
-      const targetHeat = active && dSq < 1.7 ? 1 - Math.sqrt(dSq) / 1.31 : 0
-      seat.heat += (Math.max(0, targetHeat) - seat.heat) * Math.min(1, dt * 8)
-
-      composeSeat(seat, i, boot)
-    }
-    mesh.instanceMatrix.needsUpdate = true
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-  }
-
-  const runMarket = () => {
-    if (elapsed >= nextListingAt) {
-      listRandomSeat()
-      nextListingAt = elapsed + 0.25 + Math.random() * 0.5
-    }
-    if (elapsed >= nextSnipeAt) {
-      snipe()
-      nextSnipeAt = elapsed + 3 + Math.random() * 2.5
-    }
-    // the polling sweep: a soft band crossing each tier left to right
-    for (let t = 0; t < TIERS.length; t++) {
-      if (elapsed >= sweepAt[t]) {
-        sweepX[t] = xLeft - 1
-        sweepAt[t] = elapsed + 5.5 + Math.random() * 3
-      }
-      if (sweepX[t] > -Infinity) {
-        sweepX[t] += 8.5 * (1 / 60)
-        const start = tierStart(t)
-        const count = TIERS[t].rows * COLS
-        for (let i = start; i < start + count; i++) {
-          const d = Math.abs(seats[i].x - sweepX[t])
-          if (d < 0.6) seats[i].sweep = Math.max(seats[i].sweep, 1 - d / 0.6)
-        }
-        if (sweepX[t] > -xLeft + 1) sweepX[t] = -Infinity
-      }
-    }
-  }
-
-  /* ---- sizing ---- */
+  /* ---- sizing: the console centers in the band between the css fade
+     mask on the canvas's left edge and the right margin, clear of the
+     header and the stats row ---- */
   const host = canvas.parentElement ?? canvas
+  const placeCluster = () => {
+    const bob = prefersReduced ? 0 : Math.sin(elapsed * 0.7) * 2
+    cluster.position.set(
+      clusterBase.x + parX - viewW / 2,
+      viewH / 2 - (clusterBase.y + parY) + bob,
+      lift,
+    )
+    cluster.rotation.y = TILT_Y + (parallaxEnabled ? pointerNorm.x * 0.05 : 0)
+    cluster.rotation.x = TILT_X - (parallaxEnabled ? pointerNorm.y * 0.035 : 0)
+  }
+  const layout = (w: number, h: number) => {
+    viewW = w
+    viewH = h
+    // measure the stats divider and stay clear of it (shadow included),
+    // instead of trusting viewport math that drifts with content
+    let bottomBound = Math.min(h - 210, 596)
+    const statsEl = document.querySelector('.hero-stats')
+    if (statsEl) {
+      const hostTop = host.getBoundingClientRect().top
+      const statsTop = statsEl.getBoundingClientRect().top
+      bottomBound = Math.min(bottomBound, Math.max(300, statsTop - hostTop - 30))
+    }
+    const sW = (w * 0.66 - PAD) / PANEL_W
+    const sV = (bottomBound - 92) / PANEL_H
+    const s = Math.max(0.2, Math.min(1, sW, sV))
+    const top = 92 + Math.max(0, (bottomBound - 92 - PANEL_H * s) / 2)
+    const fadeSafe = w * 0.26 + (PANEL_W / 2) * s + 10
+    const rightMost = w - PAD - 16 - (PANEL_W / 2) * s
+    clusterBase.x = Math.round(Math.min(rightMost, Math.max(w * 0.5, fadeSafe)))
+    clusterBase.y = Math.round(top + (PANEL_H * s) / 2)
+    cluster.scale.setScalar(s)
+    placeCluster()
+  }
   const resize = () => {
     const w = host.clientWidth || 1
     const h = host.clientHeight || 1
     renderer.setSize(w, h, false)
-    const aspect = w / h
-    camera.left = -FRUSTUM * aspect
-    camera.right = FRUSTUM * aspect
-    camera.top = FRUSTUM
-    camera.bottom = -FRUSTUM
+    camera.aspect = w / h
+    // distance at which one world unit projects to exactly one css pixel
+    camera.position.z = h / 2 / Math.tan((FOV * Math.PI) / 360)
     camera.updateProjectionMatrix()
+    layout(w, h)
     if (!running) renderer.render(scene, camera)
   }
   const ro = new ResizeObserver(resize)
@@ -486,17 +589,16 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   const frame = () => {
     raf = requestAnimationFrame(frame)
     const dt = Math.min(clock.getDelta(), 0.05)
-    elapsed += dt
 
-    // barely-there parallax: the chart should feel pinned, not floaty
-    if (parallaxEnabled) {
-      camera.position.x += (pointer.x * 0.15 - camera.position.x) * 0.04
-      camera.position.y += (CY + pointer.y * 0.1 - camera.position.y) * 0.04
+    updateHover()
+    if (parallaxEnabled && pointerHas) {
+      const k = Math.min(1, dt * 3)
+      parX += (pointerNorm.x * 5 - parX) * k
+      parY += (pointerNorm.y * 4 - parY) * k
     }
 
-    runMarket()
-    updateSeats(dt, elapsed)
-    tickStats()
+    step(dt)
+    placeCluster()
     renderer.render(scene, camera)
   }
 
@@ -523,15 +625,28 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   })
   io.observe(canvas)
 
+  let disposed = false
   resize()
+  step(0)
+
+  // the page requests JetBrains Mono itself, so this almost always resolves
+  // immediately; it backstops a first paint before the face is ready
+  if (document.fonts.status !== 'loaded') {
+    document.fonts.ready.then(() => {
+      if (disposed) return
+      for (const p of panels) p.redraw()
+      if (!running) renderer.render(scene, camera)
+    })
+  }
+
   if (prefersReduced) {
-    // a composed still frame: everything revealed, no motion
-    updateSeats(0, Infinity)
+    // simulate ~10s so the still frame shows a composed, plausible state
+    for (let i = 0; i < 170; i++) step(1 / 16)
+    placeCluster()
     renderer.render(scene, camera)
   } else {
     // the canvas fades in over the first rendered frames; the timeout
     // backstops occluded tabs where rAF is throttled
-    updateSeats(0, 0)
     canvas.style.opacity = '0'
     canvas.style.transition = 'opacity 0.9s ease'
     const reveal = () => {
@@ -543,15 +658,23 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   }
 
   return () => {
+    disposed = true
     setRunning(false)
     io.disconnect()
     ro.disconnect()
     document.removeEventListener('visibilitychange', onVisibility)
     if (parallaxEnabled) window.removeEventListener('pointermove', onPointerMove)
-    mesh.dispose()
-    roundedSquare.dispose()
-    seatMat.dispose()
-    for (const resource of disposables) resource.dispose()
+    for (const p of panels) p.dispose()
+    for (const section of sections) section.highlightMat.dispose()
+    highlightGeo.dispose()
+    shadow.geometry.dispose()
+    shadowMat.dispose()
+    shadowSprite.tex.dispose()
+    barGeo.dispose()
+    barMat.dispose()
+    squareGeo.dispose()
+    squareMat.dispose()
+    squareTex.dispose()
     renderer.dispose()
   }
 }
