@@ -138,9 +138,10 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
   const samples = Array.from({ length: BAR_COUNT }, (_, i) => fakeSample(i))
   const monTimer = Array.from({ length: MON_COUNT }, () => 0.2 + Math.random() * 1.8)
   const monFlash = Array.from({ length: MON_COUNT }, () => (Math.random() < 0.3 ? Math.random() : 0))
-  // a found grid that starts mid-story, not empty
-  let alerts = 4 + Math.floor(Math.random() * 3)
-  let alertIn = 3 + Math.random() * 2
+  // "this session" means what it says: finds start at zero and arrive in
+  // an early burst so the grid populates while the visitor is still here
+  let alerts = 0
+  let alertIn = 1.2 + Math.random()
   let popSlot = -1
   let popK = 1
   let numFlash = 0
@@ -229,8 +230,18 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
     sectionLabel(ctx, 'REQUESTS / SEC', 0)
     sectionLabel(ctx, 'MONITORS', SECTION_H, 'showing 14 of 285')
     // "finds", not "alerts": on a resale monitor a hit is a win, and the
-    // label should read as good news at a glance
-    sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'last hour')
+    // label should read as good news at a glance. "this session" is the
+    // truth: the counter starts at zero when the page loads.
+    sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'this session')
+    // the page's real numbers are stamped and honest; the console says
+    // plainly that it is not one of them
+    ctx.fillStyle = SLATE
+    ctx.font = `400 10px ${MONO}`
+    ctx.letterSpacing = '0.5px'
+    ctx.textAlign = 'right'
+    ctx.fillText('simulated feed', PANEL_W - PAD, PANEL_H - 13)
+    ctx.textAlign = 'left'
+    ctx.letterSpacing = '0px'
     // alert grid placeholders
     ctx.strokeStyle = HAIRLINE
     for (let n = 0; n < CELL_COUNT; n++) {
@@ -514,7 +525,7 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
     alertIn -= dt * (1 + 2.2 * sections[2].hover)
     if (alertIn <= 0) {
       alerts++
-      alertIn = 4 + Math.random() * 3
+      alertIn = alerts < 3 ? 1.2 + Math.random() * 1.2 : 4 + Math.random() * 3
       popSlot = (alerts - 1) % CELL_COUNT
       popK = 0
       numFlash = 1
