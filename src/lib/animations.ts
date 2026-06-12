@@ -90,6 +90,12 @@ export function initAnimations(): () => void {
 
 function setupMotion(mm: gsap.MatchMedia, counters: HTMLElement[]): void {
   mm.add('(prefers-reduced-motion: no-preference)', () => {
+    // Reveal tweens hide below-fold content until scrolled. Non-scrolling
+    // renderers (print, full-page capture, some crawlers) never scroll, so
+    // a failsafe completes every pending reveal after a few seconds —
+    // offscreen content becoming visible is imperceptible to a reader, and
+    // the page can no longer be captured blank.
+    const revealTweens: gsap.core.Tween[] = []
     /* ---- hero: one quiet stagger ----
        The h1 is the LCP element, so it never animates opacity — a y-drift
        only. Everything else fades up around it. */
@@ -110,24 +116,41 @@ function setupMotion(mm: gsap.MatchMedia, counters: HTMLElement[]): void {
 
     /* ---- soft reveals ---- */
     gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach((el) => {
-      gsap.from(el, {
-        autoAlpha: 0,
-        y: 24,
-        duration: 0.7,
-        ease: 'power2.out',
-        scrollTrigger: { trigger: el, start: 'top 88%', once: true },
-      })
+      revealTweens.push(
+        gsap.from(el, {
+          autoAlpha: 0,
+          y: 24,
+          duration: 0.7,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+        }),
+      )
     })
     gsap.utils.toArray<HTMLElement>('[data-reveal-group]').forEach((groupEl) => {
-      gsap.from(groupEl.children, {
-        autoAlpha: 0,
-        y: 20,
-        duration: 0.6,
-        ease: 'power2.out',
-        stagger: 0.08,
-        scrollTrigger: { trigger: groupEl, start: 'top 86%', once: true },
-      })
+      revealTweens.push(
+        gsap.from(groupEl.children, {
+          autoAlpha: 0,
+          y: 20,
+          duration: 0.6,
+          ease: 'power2.out',
+          stagger: 0.08,
+          scrollTrigger: { trigger: groupEl, once: true, start: 'top 86%' },
+        }),
+      )
     })
+
+    const failsafe = window.setTimeout(() => {
+      // kill the pending tweens and clear their inline styles: elements
+      // fall back to the stylesheet, which never hides content
+      for (const tween of revealTweens) {
+        tween.scrollTrigger?.kill()
+        tween.kill()
+      }
+      gsap.set(['[data-reveal]', '[data-reveal-group] > *'], {
+        clearProps: 'opacity,visibility,transform',
+      })
+    }, 5000)
+    return () => clearTimeout(failsafe)
 
     /* ---- stat counters ----
        Hero counters wait for their block to finish fading in, then run as

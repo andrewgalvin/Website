@@ -451,6 +451,22 @@ ol[role="list"] {
   }
 }
 
+/* Print and PDF never scroll: force every reveal to its final state and
+   drop the animated canvas, so a saved page is never blank. */
+@media print {
+  [data-reveal],
+  [data-reveal-group] > *,
+  [data-hero] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+  }
+
+  .hero-scene {
+    display: none;
+  }
+}
+
 .hero-eyebrow {
   font-family: var(--font-mono);
   font-size: 0.85rem;
