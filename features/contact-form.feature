@@ -1,7 +1,7 @@
 Feature: Contact form
-  The form posts to Netlify Forms. Validation happens in the browser,
-  delivery is platform-side, and no failure may ever strand a visitor
-  without a way to reach Andrew directly.
+  The form posts to EmailJS. Validation happens in the browser, delivery
+  is service-side, and no failure may ever strand a visitor without a way
+  to reach Andrew directly.
 
   Background:
     Given I open the homepage with animations off

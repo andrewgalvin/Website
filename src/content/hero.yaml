@@ -14,13 +14,17 @@ actions:
     style: primary
 
 # value animates from 0; suffix is appended as-is (50 + M -> 50M).
+# Stat 1 is a peak from a retired system; 2 and 3 are eSnipe, live (the
+# hero console next to them runs on the same eSnipe production feed). The
+# "+" floor on stat 3 never drifts against the live console's exact count.
 stats:
   - value: 50
     suffix: M
-    label: requests a day at peak, on Ticket Monitor
+    label: peak requests a day, Ticket Monitor (retired)
   - value: 194
     label: active users on eSnipe
-  - value: 285
+  - value: 280
+    suffix: "+"
     label: searches monitored around the clock, on eSnipe
 
 asOf: Numbers current as of June 2026
