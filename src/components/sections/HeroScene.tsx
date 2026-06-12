@@ -33,9 +33,9 @@ export function HeroScene() {
         .then(({ initHeroScene }) => {
           if (cancelled) return
           disposeRef.current = initHeroScene(canvas, {
-            onStats: ({ rate, alerts }) => {
+            onStats: ({ listings, grabbed }) => {
               if (tickerRef.current) {
-                tickerRef.current.textContent = `▪ polls/s ${Math.round(rate)} · alerts ${alerts}`
+                tickerRef.current.textContent = `▪ listings ${listings} · grabbed ${grabbed}`
               }
             },
           })
