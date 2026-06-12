@@ -1,14 +1,20 @@
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { SITE } from '@/content'
-import { CONTACT_FORM_FIELDS, CONTACT_FORM_NAME } from '@/content/contactFields'
+import {
+  CONTACT_FORM_FIELDS,
+  EMAILJS_ENDPOINT,
+  EMAILJS_PUBLIC_KEY,
+  EMAILJS_SERVICE_ID,
+  EMAILJS_TEMPLATE_ID,
+} from '@/content/contactFields'
 import { cx } from '@/lib/cx'
 
 /**
- * Contact form → Netlify Forms (replaced EmailJS in June 2026 after its
- * Gmail OAuth grant expired and every submission started failing). The
- * deploy-time registration form lives in index.html; this component posts
- * the same field names to "/" and Netlify routes the submission.
+ * Contact form → EmailJS REST. The service sends from the Google Workspace
+ * account behind identity.email; the template brands the subject with
+ * [andrewgalvin.net] and sets Reply-To to the visitor. Reconnected and
+ * rebranded June 2026 after the original Gmail OAuth grant expired.
  */
 
 const REQUIRED_FIELDS = ['name', 'email', 'message'] as const
@@ -71,23 +77,29 @@ export function ContactForm() {
     setStatus({ message: 'Sending…' })
 
     try {
-      const res = await fetch('/', {
+      const res = await fetch(EMAILJS_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { 'Content-Type': 'application/json' },
         // a hung connection should fail visibly, not spin forever
         signal: AbortSignal.timeout(10_000),
-        // keys come from contactFields.ts — the same source that generates
-        // Netlify's registration form — so the two can't drift
-        body: new URLSearchParams({
-          'form-name': CONTACT_FORM_NAME,
-          ...Object.fromEntries(CONTACT_FORM_FIELDS.map(({ name }) => [name, value(name)])),
-          subject: value('subject') || 'Portfolio contact',
-          // the bot decision already happened above; never forward a value
-          // Netlify's honeypot would silently drop the submission over
-          website: '',
-        }).toString(),
+        body: JSON.stringify({
+          service_id: EMAILJS_SERVICE_ID,
+          template_id: EMAILJS_TEMPLATE_ID,
+          user_id: EMAILJS_PUBLIC_KEY,
+          // params come from contactFields.ts — the same list the tests
+          // assert against — so form and template can't drift silently
+          template_params: {
+            ...Object.fromEntries(
+              CONTACT_FORM_FIELDS.filter((field) => !field.honeypot).map(({ name }) => [
+                name,
+                value(name),
+              ]),
+            ),
+            subject: value('subject') || 'Portfolio contact',
+          },
+        }),
       })
-      if (!res.ok) throw new Error(`Form endpoint responded ${res.status}`)
+      if (!res.ok) throw new Error(`EmailJS responded ${res.status}`)
       form.reset()
       setStatus({ message: "Thanks! Your message is on its way. I'll get back to you soon.", kind: 'success' })
     } catch {

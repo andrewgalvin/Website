@@ -7,7 +7,6 @@ import yaml from '@rollup/plugin-yaml'
 import { load } from 'js-yaml'
 import { ZodError } from 'zod'
 import { CONTENT_SCHEMAS, siteSchema } from './src/content/schema'
-import { CONTACT_FORM_FIELDS, CONTACT_FORM_NAME } from './src/content/contactFields'
 
 const contentDir = fileURLToPath(new URL('./src/content', import.meta.url))
 
@@ -42,12 +41,8 @@ function contentValidation(): Plugin {
 }
 
 /**
- * index.html is templated from the same sources the app uses:
- * - %IDENTITY_*% tokens fill from site.yaml (JSON-LD, noscript), so identity
- *   lives once.
- * - %NETLIFY_FORM% expands into the hidden Netlify Forms registration form,
- *   generated from contactFields.ts so the deploy-time field registration
- *   can never drift from what ContactForm.tsx posts.
+ * index.html is templated from the same source the app uses: %IDENTITY_*%
+ * tokens fill from site.yaml (JSON-LD, noscript), so identity lives once.
  * Any token left unreplaced fails the build (Vite alone only warns).
  */
 function htmlTemplate(): Plugin {
@@ -58,25 +53,13 @@ function htmlTemplate(): Plugin {
       handler(html) {
         const { identity } = siteSchema.parse(loadYaml('site.yaml'))
 
-        const honeypot = CONTACT_FORM_FIELDS.find((f) => f.honeypot)
-        const fields = CONTACT_FORM_FIELDS.map(({ name, type }) =>
-          type === 'textarea'
-            ? `<textarea name="${name}"></textarea>`
-            : `<input type="${type}" name="${name}" />`,
-        ).join('\n      ')
-        const netlifyForm =
-          `<form name="${CONTACT_FORM_NAME}" data-netlify="true"` +
-          `${honeypot ? ` netlify-honeypot="${honeypot.name}"` : ''} hidden>\n` +
-          `      ${fields}\n    </form>`
-
         const out = html
           .replaceAll('%IDENTITY_EMAIL%', identity.email)
           .replaceAll('%IDENTITY_PHONE%', identity.phone.e164)
           .replaceAll('%IDENTITY_GITHUB%', identity.github.url)
           .replaceAll('%IDENTITY_LINKEDIN%', identity.linkedin.url)
-          .replace('%NETLIFY_FORM%', netlifyForm)
 
-        const leftover = out.match(/%(?:IDENTITY|NETLIFY)_[A-Z_]+%/g)
+        const leftover = out.match(/%IDENTITY_[A-Z_]+%/g)
         if (leftover) {
           throw new Error(`index.html: unreplaced template tokens: ${[...new Set(leftover)].join(', ')}`)
         }

@@ -24,7 +24,7 @@ download (the canvas is hidden below 64rem).
 | 3D hero    | [Three.js](https://threejs.org) — lazy-loaded chunk          |
 | Animation  | [GSAP](https://gsap.com) + ScrollTrigger                     |
 | Styling    | Hand-rolled CSS custom-property design system                |
-| Contact    | Netlify Forms — same-origin AJAX post, no third-party        |
+| Contact    | EmailJS REST — branded template, delivery via Workspace      |
 
 ## Develop
 
@@ -61,8 +61,7 @@ request via GitHub Actions, with a Playwright trace uploaded on failure.
 ## Structure
 
 ```
-index.html                  static head (meta/OG/JSON-LD), React root,
-                            Netlify form registration
+index.html                  static head (meta/OG/JSON-LD) + React root
 features/                   Gherkin scenarios + Playwright step definitions
 public/                     favicon, resume PDF, robots.txt, sitemap.xml
 src/
@@ -70,7 +69,7 @@ src/
   App.tsx                   page composition + GSAP animation lifecycle
   content/                  ALL site copy, as YAML + the schemas that gate it
     schema.ts               zod schemas — single source for validation AND types
-    contactFields.ts        contact form wire format (form + Netlify registration)
+    contactFields.ts        contact form wire format (EmailJS IDs + fields)
     index.ts                typed exports (the only place YAML is cast)
     site.yaml               identity (email/phone/links) + nav
     hero.yaml … contact.yaml  one file per section
@@ -115,15 +114,17 @@ button uses `href: "@resume"`, which resolves to `identity.resume`.
 
 ## Contact form
 
-The form posts urlencoded to `/` and Netlify routes it. The hidden
-registration form Netlify's deploy crawler reads is generated into
-`index.html` at build time from `content/contactFields.ts` — the same list
-the React form posts — so the two can't drift. Two one-time dashboard steps:
-enable **Site configuration → Forms → Form detection**, and add an email
-notification so submissions get forwarded. Akismet filters spam server-side
-and diverts suspected messages to the dashboard's spam tab silently — worth
-a glance now and then. Local previews have no Netlify layer, so a local
-submit shows the error fallback by design.
+The form posts JSON to the EmailJS REST endpoint with publishable IDs from
+`content/contactFields.ts` — the same constants the BDD scenarios assert
+against, so the payload and the tests can't drift. The EmailJS template
+owns delivery: messages arrive at `identity.email`, sent from the connected
+Google Workspace account as "andrewgalvin.net Contact" with an
+`[andrewgalvin.net]` subject prefix, and Reply-To set to the visitor. Spam
+protection is the client-side time-gated honeypot; if the Workspace OAuth
+grant ever expires again, submissions fail visibly with a fallback message
+that shows the direct email address (and the EmailJS dashboard is where to
+reconnect). Local submits hit the real endpoint, so use the BDD suite's
+stubbed scenarios rather than manual local submits when testing.
 
 ## Performance & accessibility notes
 
@@ -132,9 +133,9 @@ submit shows the error fallback by design.
   stays typographic.
 - The render loop pauses when the tab is hidden or the hero scrolls offscreen;
   pixel ratio is capped at 2.
-- Fonts are self-hosted variable woff2 latin subsets (preloaded); the page
-  makes zero third-party requests — including the contact form, which posts
-  same-origin.
+- Fonts are self-hosted variable woff2 latin subsets (preloaded); page load
+  makes zero third-party requests. The only third-party call is the contact
+  form's submit to EmailJS, at the visitor's explicit action.
 - `prefers-reduced-motion` disables GSAP animations and the 3D render loop
   (a single static frame is drawn instead).
 - The body renders client-side; a `noscript` notice with direct contact info
