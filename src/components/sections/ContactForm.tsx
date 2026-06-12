@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { SITE } from '@/content'
+import { CONTACT_FORM_FIELDS, CONTACT_FORM_NAME } from '@/content/contactFields'
+import { cx } from '@/lib/cx'
 
 /**
  * Contact form → Netlify Forms (replaced EmailJS in June 2026 after its
@@ -74,13 +76,12 @@ export function ContactForm() {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         // a hung connection should fail visibly, not spin forever
         signal: AbortSignal.timeout(10_000),
+        // keys come from contactFields.ts — the same source that generates
+        // Netlify's registration form — so the two can't drift
         body: new URLSearchParams({
-          'form-name': 'contact',
-          name: value('name'),
-          email: value('email'),
-          companyName: value('companyName'),
+          'form-name': CONTACT_FORM_NAME,
+          ...Object.fromEntries(CONTACT_FORM_FIELDS.map(({ name }) => [name, value(name)])),
           subject: value('subject') || 'Portfolio contact',
-          message: value('message'),
           // the bot decision already happened above; never forward a value
           // Netlify's honeypot would silently drop the submission over
           website: '',
@@ -115,9 +116,11 @@ export function ContactForm() {
     'aria-invalid': invalid.has(name) || undefined,
   })
 
-  const statusClass = `form-status${
-    status.kind === 'success' ? ' is-success' : status.kind === 'error' ? ' is-error' : ''
-  }`
+  const statusClass = cx(
+    'form-status',
+    status.kind === 'success' && 'is-success',
+    status.kind === 'error' && 'is-error',
+  )
 
   return (
     <form

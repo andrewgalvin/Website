@@ -1,4 +1,5 @@
 import { CONTACT, SITE } from '@/content'
+import { externalLink } from '@/lib/links'
 import { ContactForm } from './ContactForm'
 
 export function Contact() {
@@ -25,7 +26,7 @@ export function Contact() {
                 <li key={label}>
                   <span>{label}</span>
                   {href ? (
-                    <a href={href} {...(external ? { target: '_blank', rel: 'noopener' } : {})}>
+                    <a href={href} {...(external ? externalLink : {})}>
                       {value}
                     </a>
                   ) : (

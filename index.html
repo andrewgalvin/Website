@@ -91,18 +91,11 @@
     <div id="root"></div>
 
     <!--
-      Netlify Forms registration. The deploy-time crawler provisions the
-      "contact" form from this static copy; the React form posts the same
-      field names to "/" with fetch. "website" is the honeypot.
+      Expanded at build time (vite.config.ts) into the hidden Netlify Forms
+      registration form, generated from src/content/contactFields.ts so the
+      fields Netlify provisions can never drift from what the site posts.
     -->
-    <form name="contact" data-netlify="true" netlify-honeypot="website" hidden>
-      <input type="text" name="name" />
-      <input type="email" name="email" />
-      <input type="text" name="companyName" />
-      <input type="text" name="subject" />
-      <textarea name="message"></textarea>
-      <input type="text" name="website" />
-    </form>
+    %NETLIFY_FORM%
 
     <noscript>
       <p style="font-family: system-ui, sans-serif; max-width: 36rem; margin: 4rem auto; padding: 0 1.5rem">

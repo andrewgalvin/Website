@@ -1,10 +1,10 @@
-import { HERO, SITE } from '@/content'
+import { HERO, SITE, resolveHref } from '@/content'
 import { withEmphasis } from '@/lib/emphasis'
+import { formatCount } from '@/lib/format'
+import { cx } from '@/lib/cx'
+import { externalLink } from '@/lib/links'
 import { Icon } from '@/components/ui/Icon'
 import { HeroScene } from './HeroScene'
-
-const statText = ({ value, decimals, suffix }: { value: number; decimals?: number; suffix?: string }) =>
-  value.toFixed(decimals ?? 0) + (suffix ?? '')
 
 export function Hero() {
   const { identity } = SITE
@@ -27,16 +27,16 @@ export function Hero() {
           {HERO.actions.map(({ label, href, style, external }) => (
             <a
               key={label}
-              className={style === 'primary' ? 'button button-primary' : 'button button-ghost'}
-              href={href}
-              {...(external ? { target: '_blank', rel: 'noopener' } : {})}
+              className={cx('button', style === 'primary' ? 'button-primary' : 'button-ghost')}
+              href={resolveHref(href)}
+              {...(external ? externalLink : {})}
             >
               {label}
             </a>
           ))}
           <div className="hero-social">
             {socials.map(({ name, href, label, external }) => (
-              <a key={name} href={href} aria-label={label} {...(external ? { target: '_blank', rel: 'noopener' } : {})}>
+              <a key={name} href={href} aria-label={label} {...(external ? externalLink : {})}>
                 <Icon name={name} />
               </a>
             ))}
@@ -49,7 +49,7 @@ export function Hero() {
               <dt>{stat.label}</dt>
               <dd>
                 <span data-count={stat.value} data-count-suffix={stat.suffix} data-count-decimals={stat.decimals}>
-                  {statText(stat)}
+                  {formatCount(stat.value, stat.decimals, stat.suffix)}
                 </span>
               </dd>
             </div>

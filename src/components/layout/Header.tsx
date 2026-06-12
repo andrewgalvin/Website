@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { SITE } from '@/content'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { cx } from '@/lib/cx'
+import { externalLink } from '@/lib/links'
 
 /**
  * Mobile menu open/close with the small a11y contract that goes with it:
@@ -10,13 +11,14 @@ export function Header() {
   const [open, setOpen] = useState(false)
   const toggleRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const wide = useMediaQuery('(min-width: 56rem)')
 
   // opening hands focus to the first link in the menu
   useEffect(() => {
     if (open) menuRef.current?.querySelector<HTMLElement>('a')?.focus()
   }, [open])
 
+  // while open: Esc closes (restoring focus), and growing past the mobile
+  // breakpoint clears the overlay state — no listeners while closed
   useEffect(() => {
     if (!open) return
     const onKeyDown = (e: KeyboardEvent) => {
@@ -24,14 +26,17 @@ export function Header() {
       setOpen(false)
       toggleRef.current?.focus()
     }
+    const wide = matchMedia('(min-width: 56rem)')
+    const onBreakpoint = (e: MediaQueryListEvent) => {
+      if (e.matches) setOpen(false)
+    }
     document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
+    wide.addEventListener('change', onBreakpoint)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      wide.removeEventListener('change', onBreakpoint)
+    }
   }, [open])
-
-  // leaving the mobile breakpoint clears any leftover overlay state
-  useEffect(() => {
-    if (wide) setOpen(false)
-  }, [wide])
 
   return (
     <header className="site-header">
@@ -51,7 +56,7 @@ export function Header() {
 
         <div
           ref={menuRef}
-          className={open ? 'nav-menu is-open' : 'nav-menu'}
+          className={cx('nav-menu', open && 'is-open')}
           id="site-menu"
           onClick={(e) => {
             if (e.target instanceof Element && e.target.closest('a')) setOpen(false)
@@ -64,7 +69,7 @@ export function Header() {
               </li>
             ))}
             <li>
-              <a className="nav-resume" href={SITE.identity.resume} target="_blank" rel="noopener">
+              <a className="nav-resume" href={SITE.identity.resume} {...externalLink}>
                 Résumé
               </a>
             </li>

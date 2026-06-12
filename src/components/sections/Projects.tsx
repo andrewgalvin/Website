@@ -1,4 +1,5 @@
 import { PROJECTS } from '@/content'
+import { externalLink } from '@/lib/links'
 
 export function Projects() {
   return (
@@ -21,7 +22,7 @@ export function Projects() {
                 {links && links.length > 0 && (
                   <p className="featured-links">
                     {links.map(({ label, href }) => (
-                      <a key={href} href={href} target="_blank" rel="noopener">{label}</a>
+                      <a key={href} href={href} {...externalLink}>{label}</a>
                     ))}
                   </p>
                 )}
@@ -42,7 +43,7 @@ export function Projects() {
               <p>{body}</p>
               {note && <span className="archive-private">{note}</span>}
               {link && (
-                <a href={link.href} target="_blank" rel="noopener">{link.label}</a>
+                <a href={link.href} {...externalLink}>{link.label}</a>
               )}
             </li>
           ))}

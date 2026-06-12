@@ -5,113 +5,33 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import yaml from '@rollup/plugin-yaml'
 import { load } from 'js-yaml'
+import { ZodError } from 'zod'
+import { CONTENT_SCHEMAS, siteSchema } from './src/content/schema'
+import { CONTACT_FORM_FIELDS, CONTACT_FORM_NAME } from './src/content/contactFields'
 
 const contentDir = fileURLToPath(new URL('./src/content', import.meta.url))
 
-const get = (obj: unknown, path: string): unknown =>
-  path
-    .split('.')
-    .reduce<unknown>(
-      (o, key) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[key] : undefined),
-      obj,
-    )
+const loadYaml = (file: string): unknown => load(readFileSync(join(contentDir, file), 'utf8'))
 
 /**
- * Identity (email, phone, profile links) lives once in src/content/site.yaml.
- * The React tree imports it; this plugin injects the same values into the
- * static parts of index.html (JSON-LD, the noscript notice), so changing an
- * address never means hunting through markup.
+ * Parse every content file against its schema (src/content/schema.ts), so a
+ * missing field, wrong type, blank value, unquoted date, or typo'd key fails
+ * the build naming the file and path — instead of rendering blank or
+ * crashing the page at runtime.
  */
-function htmlIdentity(): Plugin {
-  return {
-    name: 'html-identity',
-    transformIndexHtml: {
-      order: 'pre', // run before Vite's own %ENV% substitution
-      handler(html) {
-        const { identity } = load(readFileSync(join(contentDir, 'site.yaml'), 'utf8')) as {
-          identity: {
-            email: string
-            phone: { e164: string }
-            github: { url: string }
-            linkedin: { url: string }
-          }
-        }
-        return html
-          .replaceAll('%IDENTITY_EMAIL%', identity.email)
-          .replaceAll('%IDENTITY_PHONE%', identity.phone.e164)
-          .replaceAll('%IDENTITY_GITHUB%', identity.github.url)
-          .replaceAll('%IDENTITY_LINKEDIN%', identity.linkedin.url)
-      },
-    },
-  }
-}
-
-/**
- * Fail the build (and dev startup) when a content file drops a required
- * field, instead of letting the site render blanks. The TypeScript types in
- * src/content/types.ts cover component usage; this covers the YAML itself.
- */
-const REQUIRED_FIELDS: Record<string, string[]> = {
-  'site.yaml': [
-    'identity.name',
-    'identity.email',
-    'identity.phone.display',
-    'identity.phone.e164',
-    'identity.location',
-    'identity.github.label',
-    'identity.github.url',
-    'identity.linkedin.label',
-    'identity.linkedin.url',
-    'identity.resume',
-    'identity.source',
-    'nav',
-  ],
-  'hero.yaml': ['eyebrow', 'title', 'sub', 'actions', 'stats', 'asOf'],
-  'about.yaml': ['title', 'lead', 'paragraphs', 'facts', 'principles'],
-  'projects.yaml': ['title', 'featured', 'archiveTitle', 'archive'],
-  'experience.yaml': ['title', 'items', 'resumeLabel'],
-  'skills.yaml': ['title', 'groups'],
-  'contact.yaml': ['title', 'lead', 'blurb'],
-}
-
-const LIST_ITEM_FIELDS: Record<string, Array<[list: string, fields: string[]]>> = {
-  'site.yaml': [['nav', ['label', 'href']]],
-  'hero.yaml': [
-    ['actions', ['label', 'href', 'style']],
-    ['stats', ['value', 'label']],
-  ],
-  'about.yaml': [
-    ['facts', ['term', 'detail']],
-    ['principles', ['title', 'body']],
-  ],
-  'projects.yaml': [
-    ['featured', ['kicker', 'title', 'body', 'tags', 'figure.number', 'figure.caption']],
-    ['archive', ['title', 'body']],
-  ],
-  'experience.yaml': [['items', ['dates', 'title', 'org']]],
-  'skills.yaml': [['groups', ['title', 'items']]],
-}
-
 function contentValidation(): Plugin {
   return {
     name: 'content-validation',
     buildStart() {
       const problems: string[] = []
-      for (const [file, fields] of Object.entries(REQUIRED_FIELDS)) {
-        const data = load(readFileSync(join(contentDir, file), 'utf8'))
-        for (const field of fields) {
-          if (get(data, field) === undefined) problems.push(`${file}: missing "${field}"`)
-        }
-        for (const [list, itemFields] of LIST_ITEM_FIELDS[file] ?? []) {
-          const items = get(data, list)
-          if (!Array.isArray(items)) continue // absence already reported above
-          items.forEach((item, i) => {
-            for (const field of itemFields) {
-              if (get(item, field) === undefined) {
-                problems.push(`${file}: ${list}[${i}] missing "${field}"`)
-              }
-            }
-          })
+      for (const [file, schema] of Object.entries(CONTENT_SCHEMAS)) {
+        try {
+          schema.parse(loadYaml(file))
+        } catch (err) {
+          if (!(err instanceof ZodError)) throw err
+          for (const issue of err.issues) {
+            problems.push(`${file}: ${issue.path.join('.') || '(root)'} — ${issue.message}`)
+          }
         }
       }
       if (problems.length > 0) {
@@ -121,8 +41,53 @@ function contentValidation(): Plugin {
   }
 }
 
+/**
+ * index.html is templated from the same sources the app uses:
+ * - %IDENTITY_*% tokens fill from site.yaml (JSON-LD, noscript), so identity
+ *   lives once.
+ * - %NETLIFY_FORM% expands into the hidden Netlify Forms registration form,
+ *   generated from contactFields.ts so the deploy-time field registration
+ *   can never drift from what ContactForm.tsx posts.
+ * Any token left unreplaced fails the build (Vite alone only warns).
+ */
+function htmlTemplate(): Plugin {
+  return {
+    name: 'html-template',
+    transformIndexHtml: {
+      order: 'pre', // run before Vite's own %ENV% substitution
+      handler(html) {
+        const { identity } = siteSchema.parse(loadYaml('site.yaml'))
+
+        const honeypot = CONTACT_FORM_FIELDS.find((f) => f.honeypot)
+        const fields = CONTACT_FORM_FIELDS.map(({ name, type }) =>
+          type === 'textarea'
+            ? `<textarea name="${name}"></textarea>`
+            : `<input type="${type}" name="${name}" />`,
+        ).join('\n      ')
+        const netlifyForm =
+          `<form name="${CONTACT_FORM_NAME}" data-netlify="true"` +
+          `${honeypot ? ` netlify-honeypot="${honeypot.name}"` : ''} hidden>\n` +
+          `      ${fields}\n    </form>`
+
+        const out = html
+          .replaceAll('%IDENTITY_EMAIL%', identity.email)
+          .replaceAll('%IDENTITY_PHONE%', identity.phone.e164)
+          .replaceAll('%IDENTITY_GITHUB%', identity.github.url)
+          .replaceAll('%IDENTITY_LINKEDIN%', identity.linkedin.url)
+          .replace('%NETLIFY_FORM%', netlifyForm)
+
+        const leftover = out.match(/%(?:IDENTITY|NETLIFY)_[A-Z_]+%/g)
+        if (leftover) {
+          throw new Error(`index.html: unreplaced template tokens: ${[...new Set(leftover)].join(', ')}`)
+        }
+        return out
+      },
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), yaml(), contentValidation(), htmlIdentity()],
+  plugins: [react(), yaml(), contentValidation(), htmlTemplate()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

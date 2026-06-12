@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { initAnimations } from '@/lib/animations'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -11,8 +11,10 @@ import { Contact } from '@/components/sections/Contact'
 
 export default function App() {
   // GSAP wires scroll state and reveals onto the rendered tree; it returns
-  // its own teardown, so remounts (StrictMode included) stay clean.
-  useEffect(() => initAnimations(), [])
+  // its own teardown, so remounts (StrictMode included) stay clean. Layout
+  // effect, not passive: gsap.from() must apply the hidden "from" states
+  // before first paint or the hero flashes visible, then restarts hidden.
+  useLayoutEffect(() => initAnimations(), [])
 
   return (
     <>

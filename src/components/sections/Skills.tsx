@@ -1,4 +1,5 @@
 import { SKILLS } from '@/content'
+import { cx } from '@/lib/cx'
 
 export function Skills() {
   return (
@@ -8,7 +9,7 @@ export function Skills() {
 
         <div className="skills-grid" data-reveal-group>
           {SKILLS.groups.map(({ title, items, featured }) => (
-            <div className={featured ? 'skill-group skill-group-featured' : 'skill-group'} key={title}>
+            <div className={cx('skill-group', featured && 'skill-group-featured')} key={title}>
               <h3>{title}</h3>
               <ul role="list">
                 {items.map((item) => (

@@ -7,12 +7,14 @@ sub: >-
   live-events resale industry. I work AI-first and ship production
   software fast, with the tests to prove it's right.
 
+# "@resume" resolves to identity.resume from site.yaml, so the PDF path
+# lives in one place.
 actions:
   - label: See my work
     href: "#projects"
     style: primary
   - label: View résumé
-    href: /Andrew-Galvin-Resume.pdf
+    href: "@resume"
     style: ghost
     external: true
 

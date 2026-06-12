@@ -1,4 +1,5 @@
 import { SITE } from '@/content'
+import { externalLink } from '@/lib/links'
 
 export function Footer() {
   return (
@@ -6,11 +7,11 @@ export function Footer() {
       <div className="container footer-inner">
         <p>© {new Date().getFullYear()} {SITE.identity.name}</p>
         <p>
-          Built with <a href="https://react.dev" target="_blank" rel="noopener">React</a>,{' '}
-          <a href="https://threejs.org" target="_blank" rel="noopener">Three.js</a>,{' '}
-          <a href="https://gsap.com" target="_blank" rel="noopener">GSAP</a> &amp;{' '}
-          <a href="https://vite.dev" target="_blank" rel="noopener">Vite</a>, plus an AI pair or two ·{' '}
-          <a href={SITE.identity.source} target="_blank" rel="noopener">Source</a> ·{' '}
+          Built with <a href="https://react.dev" {...externalLink}>React</a>,{' '}
+          <a href="https://threejs.org" {...externalLink}>Three.js</a>,{' '}
+          <a href="https://gsap.com" {...externalLink}>GSAP</a> &amp;{' '}
+          <a href="https://vite.dev" {...externalLink}>Vite</a>, plus an AI pair or two ·{' '}
+          <a href={SITE.identity.source} {...externalLink}>Source</a> ·{' '}
           <a href="#top">Back to top ↑</a>
         </p>
       </div>

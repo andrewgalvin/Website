@@ -18,7 +18,7 @@ download (the canvas is hidden below 64rem).
 | ---------- | ------------------------------------------------------------ |
 | Build      | [Vite](https://vite.dev) + TypeScript (strict, project refs) |
 | UI         | [React 19](https://react.dev) — function components + hooks  |
-| Content    | YAML via `@rollup/plugin-yaml`, typed in `content/types.ts`  |
+| Content    | YAML via `@rollup/plugin-yaml`, zod-validated at build       |
 | 3D hero    | [Three.js](https://threejs.org) — lazy-loaded chunk          |
 | Animation  | [GSAP](https://gsap.com) + ScrollTrigger                     |
 | Styling    | Hand-rolled CSS custom-property design system                |
@@ -42,8 +42,9 @@ public/                     favicon, resume PDF, robots.txt, sitemap.xml
 src/
   main.tsx                  entry — mounts <App />
   App.tsx                   page composition + GSAP animation lifecycle
-  content/                  ALL site copy, as YAML + the types that gate it
-    types.ts                content interfaces
+  content/                  ALL site copy, as YAML + the schemas that gate it
+    schema.ts               zod schemas — single source for validation AND types
+    contactFields.ts        contact form wire format (form + Netlify registration)
     index.ts                typed exports (the only place YAML is cast)
     site.yaml               identity (email/phone/links) + nav
     hero.yaml … contact.yaml  one file per section
@@ -78,19 +79,25 @@ Everything a visitor reads is YAML in `src/content/` — no JSX edits needed:
 - Section ids (`#about`, `#projects`, …) are owned by the section components;
   `nav` hrefs in `site.yaml` must match them.
 
-Two guards keep edits safe: `content/types.ts` types every field where
-components consume it, and a build-time validator in `vite.config.ts` checks
-the YAML itself — a missing required field fails `npm run build` with the
-file, entry index, and field named, instead of rendering blank.
+One schema guards everything: `content/schema.ts` defines each file's shape
+in zod, TypeScript types derive from it (`z.infer`), and the build validates
+every YAML file against it — a missing field, blank value, wrong type,
+unquoted date, or typo'd key fails `npm run build` naming the file and path,
+instead of rendering blank or crashing the page. (zod is build-side only;
+type-only imports keep it out of the browser bundle.) The hero's résumé
+button uses `href: "@resume"`, which resolves to `identity.resume`.
 
 ## Contact form
 
-The form posts urlencoded to `/` and Netlify routes it; the hidden form in
-`index.html` is what Netlify's deploy crawler reads to provision it. Two
-one-time dashboard steps: enable **Site configuration → Forms → Form
-detection**, and add an email notification so submissions get forwarded.
-Local previews have no Netlify layer, so a local submit shows the error
-fallback by design.
+The form posts urlencoded to `/` and Netlify routes it. The hidden
+registration form Netlify's deploy crawler reads is generated into
+`index.html` at build time from `content/contactFields.ts` — the same list
+the React form posts — so the two can't drift. Two one-time dashboard steps:
+enable **Site configuration → Forms → Form detection**, and add an email
+notification so submissions get forwarded. Akismet filters spam server-side
+and diverts suspected messages to the dashboard's spam tab silently — worth
+a glance now and then. Local previews have no Netlify layer, so a local
+submit shows the error fallback by design.
 
 ## Performance & accessibility notes
 

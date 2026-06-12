@@ -12,13 +12,14 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
  */
 export function HeroScene() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const sceneRef = useRef<{ loaded: boolean; dispose?: () => void }>({ loaded: false })
+  // set exactly once, when the scene finishes loading; presence means loaded
+  const disposeRef = useRef<(() => void) | null>(null)
   const [failed, setFailed] = useState(false)
   const wide = useMediaQuery('(min-width: 64rem)')
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || !wide || failed || sceneRef.current.loaded) return
+    if (!canvas || !wide || failed || disposeRef.current) return
 
     let cancelled = false
     let idleId: number | undefined
@@ -28,8 +29,7 @@ export function HeroScene() {
       import('@/scene/heroScene')
         .then(({ initHeroScene }) => {
           if (cancelled) return
-          sceneRef.current.loaded = true
-          sceneRef.current.dispose = initHeroScene(canvas)
+          disposeRef.current = initHeroScene(canvas)
         })
         .catch(() => setFailed(true))
     }
@@ -48,8 +48,7 @@ export function HeroScene() {
 
   // dispose the renderer only when the component actually unmounts
   useEffect(() => {
-    const scene = sceneRef.current
-    return () => scene.dispose?.()
+    return () => disposeRef.current?.()
   }, [])
 
   return (

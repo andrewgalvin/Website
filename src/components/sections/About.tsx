@@ -9,8 +9,9 @@ export function About() {
         <div className="about-grid">
           <div className="about-copy flow" data-reveal>
             <p className="lead">{ABOUT.lead}</p>
-            {ABOUT.paragraphs.map((paragraph) => (
-              <p key={paragraph.slice(0, 32)}>{paragraph}</p>
+            {ABOUT.paragraphs.map((paragraph, i) => (
+              // index keys: build-time content, never reordered at runtime
+              <p key={i}>{paragraph}</p>
             ))}
           </div>
 

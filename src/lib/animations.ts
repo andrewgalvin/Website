@@ -1,9 +1,13 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { SITE } from '@/content'
+import { formatCount } from '@/lib/format'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const SECTION_IDS = ['about', 'projects', 'experience', 'skills', 'contact']
+// scrollspy targets derive from the nav, so adding a section to site.yaml
+// can't silently miss the highlight tracking
+const SECTION_IDS = SITE.nav.map(({ href }) => href.slice(1))
 
 const counterParts = (el: HTMLElement) => ({
   target: Number.parseFloat(el.dataset.count ?? '0'),
@@ -13,7 +17,7 @@ const counterParts = (el: HTMLElement) => ({
 
 const counterFinalText = (el: HTMLElement) => {
   const { target, decimals, suffix } = counterParts(el)
-  return target.toFixed(decimals) + suffix
+  return formatCount(target, decimals, suffix)
 }
 
 export function initAnimations(): () => void {
@@ -143,7 +147,7 @@ function setupMotion(mm: gsap.MatchMedia, counters: HTMLElement[]): void {
           ? undefined
           : { trigger: el, start: 'top 90%', once: true },
         onUpdate: () => {
-          el.textContent = state.value.toFixed(decimals) + suffix
+          el.textContent = formatCount(state.value, decimals, suffix)
         },
       })
     })

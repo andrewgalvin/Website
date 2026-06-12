@@ -1,7 +1,8 @@
 /**
  * Typed gateway to the YAML content. This is the only module that touches
- * the raw imports; everything else reads these constants and gets full
- * type checking against src/content/types.ts.
+ * the raw imports; everything else reads these constants. The shapes are
+ * enforced at build time by vite.config.ts against src/content/schema.ts —
+ * type-only imports here keep zod out of the browser bundle.
  */
 
 import type {
@@ -12,7 +13,7 @@ import type {
   ProjectsContent,
   SiteContent,
   SkillsContent,
-} from './types'
+} from './schema'
 
 import site from './site.yaml'
 import hero from './hero.yaml'
@@ -30,4 +31,6 @@ export const EXPERIENCE = experience as ExperienceContent
 export const SKILLS = skills as SkillsContent
 export const CONTACT = contact as ContactContent
 
-export type * from './types'
+/** Resolves content href aliases: "@resume" → identity.resume. */
+export const resolveHref = (href: string): string =>
+  href === '@resume' ? SITE.identity.resume : href

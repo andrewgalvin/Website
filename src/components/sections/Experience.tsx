@@ -1,4 +1,5 @@
 import { EXPERIENCE, SITE } from '@/content'
+import { externalLink } from '@/lib/links'
 
 export function Experience() {
   return (
@@ -15,8 +16,9 @@ export function Experience() {
                 <p className="timeline-org">{org}</p>
                 {bullets && bullets.length > 0 && (
                   <ul className="timeline-bullets">
-                    {bullets.map((bullet) => (
-                      <li key={bullet.slice(0, 32)}>{bullet}</li>
+                    {bullets.map((bullet, i) => (
+                      // index keys: build-time content, never reordered
+                      <li key={i}>{bullet}</li>
                     ))}
                   </ul>
                 )}
@@ -34,7 +36,7 @@ export function Experience() {
         </ol>
 
         <p className="experience-resume" data-reveal>
-          <a href={SITE.identity.resume} target="_blank" rel="noopener">
+          <a href={SITE.identity.resume} {...externalLink}>
             {EXPERIENCE.resumeLabel}
           </a>
         </p>
