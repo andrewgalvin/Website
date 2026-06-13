@@ -20,9 +20,8 @@ items:
         Ship rapidly with an AI-first workflow and build LLM-powered
         internal tooling, holding the line on code quality and testability.
       - >-
-        Own platform work end to end: design, build, deploy, operate. The
-        interesting details are proprietary, but I'm happy to talk at a
-        high level.
+        Own platform work end to end: design, build, deploy, and operate
+        the services that keep inventory accurate under load.
     tags:
       - Go
       - Microservices

@@ -6,6 +6,10 @@
  * on its own.
  */
 
+/** public aggregate stats from eSnipe production (counts only, 10s cache) */
+export const STATS_URL = 'https://xdpizcaopjvulpoyyxum.supabase.co/functions/v1/portfolio-stats'
+export const STATS_REFRESH_MS = 10_000
+
 export interface LiveStats {
   /** distinct active search definitions being monitored */
   activeSearches: number
@@ -13,6 +17,8 @@ export interface LiveStats {
   findsLastHour: number
   /** seconds since the most recent find — the freshness heartbeat */
   secondsSinceLastFind: number | null
+  /** % of active searches polled within their cadence — an operated SLO */
+  pollOnSchedulePct: number | null
 }
 
 const finiteNumber = (value: unknown): value is number =>
@@ -35,9 +41,12 @@ export function parseLiveStats(data: unknown): LiveStats | null {
       ? d.secondsSinceLastPoll
       : null
 
+  const pct = finiteNumber(d.pollOnSchedulePct) ? d.pollOnSchedulePct : null
+
   return {
     activeSearches: d.activeSearches,
     findsLastHour: d.findsLastHour,
     secondsSinceLastFind: freshRaw !== null ? Math.max(0, freshRaw) : null,
+    pollOnSchedulePct: pct !== null ? Math.max(0, Math.min(100, Math.round(pct))) : null,
   }
 }

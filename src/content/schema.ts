@@ -18,10 +18,6 @@ export const siteSchema = z.strictObject({
   identity: z.strictObject({
     name: z.string().min(1),
     email: z.string().includes('@'),
-    phone: z.strictObject({
-      display: z.string().min(1),
-      e164: z.string().regex(/^\+\d{7,15}$/, 'E.164, e.g. +17819275667'),
-    }),
     location: z.string().min(1),
     github: z.strictObject({ label: z.string().min(1), url: z.string().min(1) }),
     linkedin: z.strictObject({ label: z.string().min(1), url: z.string().min(1) }),
@@ -111,12 +107,18 @@ export const experienceSchema = z.strictObject({
   resumeLabel: z.string().min(1),
 })
 
+// a skill is plain text, or a chip that links to public evidence
+const skillItem = z.union([
+  z.string().min(1),
+  z.strictObject({ label: z.string().min(1), href: z.string().min(1) }),
+])
+
 export const skillsSchema = z.strictObject({
   title: z.string().min(1),
   groups: z.array(
     z.strictObject({
       title: z.string().min(1),
-      items: z.array(z.string().min(1)),
+      items: z.array(skillItem),
       featured: z.boolean().optional(),
     }),
   ),

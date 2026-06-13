@@ -16,7 +16,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from 'three'
-import { parseLiveStats, type LiveStats } from './liveStats'
+import { parseLiveStats, STATS_REFRESH_MS, STATS_URL, type LiveStats } from './liveStats'
 
 /**
  * Hero accent: "Instrument" — one console panel of the live monitoring
@@ -61,9 +61,6 @@ const PANEL_H = SECTION_H * 3
 const RADIUS = 16
 const PAD = 26
 
-/** public aggregate stats from eSnipe production (counts only, 10s cache) */
-const STATS_URL = 'https://xdpizcaopjvulpoyyxum.supabase.co/functions/v1/portfolio-stats'
-const STATS_REFRESH_MS = 10_000
 /** css-px y offsets of the three section centers from the panel center */
 const SECTION_OFFSETS = [-SECTION_H, 0, SECTION_H]
 /** canvas-2d textures draw at 2x and minify, which keeps the type crisp */
@@ -247,7 +244,16 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
     }
     if (live) {
       sectionLabel(ctx, 'LAST FIND', 0)
-      sectionLabel(ctx, 'SEARCHES', SECTION_H, `showing 14 of ${live.activeSearches}`)
+      // surface the operated SLO right in the trusted live console when the
+      // endpoint reports it; otherwise just the count
+      sectionLabel(
+        ctx,
+        'SEARCHES',
+        SECTION_H,
+        live.pollOnSchedulePct !== null
+          ? `${live.activeSearches} active · ${live.pollOnSchedulePct}% on time`
+          : `showing 14 of ${live.activeSearches}`,
+      )
       // "finds" = new eBay listings the monitor discovered (fleet-wide,
       // across every search); the meta keeps 6k/hr from reading as
       // per-user alerts
