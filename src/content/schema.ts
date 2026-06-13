@@ -47,10 +47,15 @@ export const heroSchema = z.strictObject({
   ),
   stats: z.array(
     z.strictObject({
+      // `value` is the static figure and the fallback before live data loads
       value: z.number(),
       label: z.string().min(1),
       suffix: z.string().optional(),
       decimals: z.number().int().optional(),
+      // when set, the number comes live from the eSnipe feed
+      live: z.enum(['registered', 'searches']).optional(),
+      // appends a second live figure to the label, e.g. "· 92 active now"
+      liveSub: z.enum(['active']).optional(),
     }),
   ),
   asOf: z.string().min(1),
@@ -76,6 +81,8 @@ export const projectsSchema = z.strictObject({
       figure: z.strictObject({
         number: z.string().min(1, 'quote numeric figures, e.g. "194"'),
         caption: z.string().min(1),
+        // when set, the figure number comes live from the eSnipe feed
+        live: z.enum(['registered', 'activeSearches']).optional(),
       }),
     }),
   ),
@@ -143,6 +150,8 @@ export const CONTENT_SCHEMAS = {
 
 export type SiteContent = z.infer<typeof siteSchema>
 export type HeroContent = z.infer<typeof heroSchema>
+export type Stat = HeroContent['stats'][number]
+export type FeaturedProject = z.infer<typeof projectsSchema>['featured'][number]
 export type AboutContent = z.infer<typeof aboutSchema>
 export type ProjectsContent = z.infer<typeof projectsSchema>
 export type ExperienceContent = z.infer<typeof experienceSchema>

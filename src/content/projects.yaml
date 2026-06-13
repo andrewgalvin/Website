@@ -29,11 +29,11 @@ featured:
   - kicker: In production since launch
     title: eSnipe
     body: >-
-      An eBay monitoring and alerting platform serving 194 active users,
-      with native iOS and Android apps and Discord alerts that land in
-      seconds. It tracks 280+ active searches, each polling on a user-chosen
-      cadence from every 5 seconds to every 60 minutes, and stays accurate
-      inside strict external API limits.
+      An eBay monitoring and alerting platform with native iOS and Android
+      apps and Discord alerts that land in seconds. It tracks hundreds of
+      active searches, each polling on a user-chosen cadence from every 5
+      seconds to every 60 minutes, and stays accurate inside strict
+      external API limits.
     tags:
       - Production operations
       - API integration
@@ -45,9 +45,11 @@ featured:
         href: https://apps.apple.com/app/id6758319934
       - label: Google Play ↗
         href: https://play.google.com/store/apps/details?id=com.automate.esnipe.app
+    # the figure number comes live from the eSnipe feed (registered users)
     figure:
-      number: "194"
-      caption: active users today
+      number: "197"
+      caption: users on eSnipe
+      live: registered
 
 archiveTitle: Earlier work
 
