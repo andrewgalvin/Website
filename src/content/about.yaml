@@ -15,8 +15,7 @@ paragraphs:
     I work AI-first. Claude, Cursor, Codex, and ChatGPT are in my daily
     loop for scaffolding, tests, and review. I also build with LLMs
     directly: local-model pipelines with human review where it matters.
-    The tools buy speed. The discipline keeps quality and testability
-    non-negotiable.
+    The tools buy speed. The discipline keeps it correct and tested.
   - >-
     Before this I was at Fidelity, building internal deployment platforms
     and often acting as de facto tech lead. M.S. in Applied Computer
@@ -39,9 +38,9 @@ facts:
 
 # Numbered automatically (01, 02, ...) in display order.
 principles:
-  - title: AI leverage, human judgment
+  - title: AI speed, human judgment
     body: >-
-      Assistants accelerate the typing. Design decisions, reviews, and the
+      Assistants handle the typing. Design decisions, reviews, and the
       final word on correctness stay human.
   - title: Tests are the contract
     body: >-
