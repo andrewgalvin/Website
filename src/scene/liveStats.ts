@@ -11,6 +11,10 @@ export const STATS_URL = 'https://xdpizcaopjvulpoyyxum.supabase.co/functions/v1/
 export const STATS_REFRESH_MS = 10_000
 
 export interface LiveStats {
+  /** distinct registered accounts (null if the endpoint omits it) */
+  registeredUsers: number | null
+  /** distinct users with an active subscription */
+  activeUsers: number | null
   /** distinct active search definitions being monitored */
   activeSearches: number
   /** new listings discovered in the trailing hour (fleet-wide) */
@@ -44,6 +48,8 @@ export function parseLiveStats(data: unknown): LiveStats | null {
   const pct = finiteNumber(d.pollOnSchedulePct) ? d.pollOnSchedulePct : null
 
   return {
+    registeredUsers: finiteNumber(d.registeredUsers) ? Math.max(0, Math.round(d.registeredUsers)) : null,
+    activeUsers: finiteNumber(d.activeUsers) ? Math.max(0, Math.round(d.activeUsers)) : null,
     activeSearches: d.activeSearches,
     findsLastHour: d.findsLastHour,
     secondsSinceLastFind: freshRaw !== null ? Math.max(0, freshRaw) : null,

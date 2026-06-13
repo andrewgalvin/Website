@@ -1,14 +1,17 @@
 import { HERO, SITE, resolveHref } from '@/content'
 import { withEmphasis } from '@/lib/emphasis'
-import { formatCount } from '@/lib/format'
 import { cx } from '@/lib/cx'
 import { externalLink } from '@/lib/links'
+import { useLiveStats } from '@/hooks/useLiveStats'
 import { Icon } from '@/components/ui/Icon'
 import { HeroScene } from './HeroScene'
 import { HeroLiveCard } from './HeroLiveCard'
+import { HeroStat } from './HeroStat'
 
 export function Hero() {
   const { identity } = SITE
+  // the stats want live values on every viewport; one 10s poll, server-cached
+  const live = useLiveStats(true)
   const socials = [
     { name: 'github' as const, href: identity.github.url, label: 'GitHub profile', external: true },
     { name: 'linkedin' as const, href: identity.linkedin.url, label: 'LinkedIn profile', external: true },
@@ -48,14 +51,7 @@ export function Hero() {
 
         <dl className="hero-stats" data-hero>
           {HERO.stats.map((stat) => (
-            <div className="stat" key={stat.label}>
-              <dt>{stat.label}</dt>
-              <dd>
-                <span data-count={stat.value} data-count-suffix={stat.suffix} data-count-decimals={stat.decimals}>
-                  {formatCount(stat.value, stat.decimals, stat.suffix)}
-                </span>
-              </dd>
-            </div>
+            <HeroStat key={stat.label} stat={stat} live={live} />
           ))}
         </dl>
         <p className="stats-asof" data-hero>{HERO.asOf}</p>

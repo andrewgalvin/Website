@@ -1,7 +1,16 @@
 import { PROJECTS } from '@/content'
 import { externalLink } from '@/lib/links'
+import { useLiveStats } from '@/hooks/useLiveStats'
 
 export function Projects() {
+  const live = useLiveStats(true)
+  // a featured figure flagged `live` shows the production number once the
+  // feed answers, falling back to its static value until then
+  const figureNumber = (figure: { number: string; live?: 'registered' | 'activeSearches' }) => {
+    const value = figure.live === 'registered' ? live?.registeredUsers : undefined
+    return typeof value === 'number' ? value.toLocaleString('en-US') : figure.number
+  }
+
   return (
     <section className="section" id="projects" aria-labelledby="projects-title">
       <div className="container">
@@ -28,7 +37,7 @@ export function Projects() {
                 )}
               </div>
               <div className="featured-figure" aria-hidden="true">
-                <span className="featured-number">{figure.number}</span>
+                <span className="featured-number">{figureNumber(figure)}</span>
                 <span className="featured-caption">{figure.caption}</span>
               </div>
             </article>

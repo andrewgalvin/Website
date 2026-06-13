@@ -15,6 +15,8 @@ import type {
   SkillsContent,
 } from './schema'
 
+export type { Stat, FeaturedProject } from './schema'
+
 import site from './site.yaml'
 import hero from './hero.yaml'
 import about from './about.yaml'

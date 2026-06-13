@@ -8,12 +8,28 @@ Then('the hero shows the name and eyebrow from the content files', async ({ page
   await expect(page.locator('.hero-eyebrow')).toHaveText(hero.eyebrow)
 })
 
+const statNumbers = (page: import('@playwright/test').Page) =>
+  page.locator('.hero-stats .stat dd')
+
 Then('the hero stats finish counting to their configured values', async ({ page }) => {
-  for (const stat of hero.stats) {
-    await expect(page.locator(`[data-count="${stat.value}"]`)).toHaveText(
-      formatCount(stat.value, stat.decimals, stat.suffix),
-      { timeout: 10_000 },
-    )
+  const dds = statNumbers(page)
+  await expect(dds).toHaveCount(hero.stats.length)
+  for (let i = 0; i < hero.stats.length; i++) {
+    const stat = hero.stats[i]
+    if (stat.live) {
+      // a live figure settles on whatever production reports; assert it
+      // counted up to a real positive number rather than a fixed string
+      await expect
+        .poll(
+          async () => Number(((await dds.nth(i).textContent()) ?? '').replace(/[^\d]/g, '')),
+          { timeout: 10_000 },
+        )
+        .toBeGreaterThan(0)
+    } else {
+      await expect(dds.nth(i)).toHaveText(formatCount(stat.value, stat.decimals, stat.suffix), {
+        timeout: 10_000,
+      })
+    }
   }
 })
 
@@ -43,12 +59,15 @@ Then('every resume link on the page points at the same PDF from site.yaml', asyn
 })
 
 Then('the hero stats show their final values without animating', async ({ page }) => {
-  // the count-up animation would not reach the final string this quickly,
-  // so a short timeout proves the reduced-motion path rendered it directly
-  for (const stat of hero.stats) {
-    await expect(page.locator(`[data-count="${stat.value}"]`)).toHaveText(
-      formatCount(stat.value, stat.decimals, stat.suffix),
-      { timeout: 1500 },
-    )
+  // a static stat would not reach its final string this quickly if it were
+  // counting up, so a short timeout proves the reduced-motion path rendered
+  // it directly. (Live stats arrive via fetch regardless of motion.)
+  const dds = statNumbers(page)
+  for (let i = 0; i < hero.stats.length; i++) {
+    const stat = hero.stats[i]
+    if (stat.live) continue
+    await expect(dds.nth(i)).toHaveText(formatCount(stat.value, stat.decimals, stat.suffix), {
+      timeout: 1500,
+    })
   }
 })
