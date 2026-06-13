@@ -14,7 +14,8 @@ featured:
       A distributed monitoring platform that watched event inventory and
       alerted users to in-stock tickets in near real time. Concurrency
       controls, rate limiting, and fault-tolerant retries kept it reliable
-      while it processed around 50 million requests a day at peak. Now
+      while a fleet of workers re-polled 3,500 to 4,000 live events every
+      few seconds, around 50 million outbound requests a day at peak. Now
       retired, but it opened the door to the work I do today.
     tags:
       - Distributed systems

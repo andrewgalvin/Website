@@ -9,8 +9,26 @@ import { parseLiveStats } from './liveStats'
 describe('parseLiveStats', () => {
   it('accepts a well-formed live payload', () => {
     expect(
-      parseLiveStats({ activeSearches: 286, findsLastHour: 6190, secondsSinceLastFind: 4 }),
-    ).toEqual({ activeSearches: 286, findsLastHour: 6190, secondsSinceLastFind: 4 })
+      parseLiveStats({
+        activeSearches: 286,
+        findsLastHour: 6190,
+        secondsSinceLastFind: 4,
+        pollOnSchedulePct: 93,
+      }),
+    ).toEqual({
+      activeSearches: 286,
+      findsLastHour: 6190,
+      secondsSinceLastFind: 4,
+      pollOnSchedulePct: 93,
+    })
+  })
+
+  it('defaults pollOnSchedulePct to null and clamps it to 0..100', () => {
+    expect(parseLiveStats({ activeSearches: 1, findsLastHour: 2 })?.pollOnSchedulePct).toBeNull()
+    expect(
+      parseLiveStats({ activeSearches: 1, findsLastHour: 2, pollOnSchedulePct: 140 })
+        ?.pollOnSchedulePct,
+    ).toBe(100)
   })
 
   it('honors the secondsSinceLastPoll alias from the first endpoint', () => {

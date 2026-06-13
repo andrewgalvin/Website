@@ -21,7 +21,9 @@ groups:
       - Real-time WebSockets
       - Rate limiting & backpressure
       - Fault tolerance & retries
-      - Concurrency & scheduling
+      # links to public Go code — the reusable monitor foundation
+      - label: Concurrency & scheduling
+        href: https://github.com/andrewgalvin/base-monitor-service
       - REST APIs (chi, Fiber, FastAPI)
       - PostgreSQL
 

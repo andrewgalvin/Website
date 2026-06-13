@@ -6,7 +6,6 @@ export function Contact() {
   const { identity } = SITE
   const channels = [
     { label: 'Email', value: identity.email, href: `mailto:${identity.email}` },
-    { label: 'Phone', value: identity.phone.display, href: `tel:${identity.phone.e164}` },
     { label: 'LinkedIn', value: identity.linkedin.label, href: identity.linkedin.url, external: true },
     { label: 'GitHub', value: identity.github.label, href: identity.github.url, external: true },
     { label: 'Base', value: identity.location },

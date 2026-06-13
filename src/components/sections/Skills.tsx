@@ -1,5 +1,6 @@
 import { SKILLS } from '@/content'
 import { cx } from '@/lib/cx'
+import { externalLink } from '@/lib/links'
 
 export function Skills() {
   return (
@@ -12,9 +13,15 @@ export function Skills() {
             <div className={cx('skill-group', featured && 'skill-group-featured')} key={title}>
               <h3>{title}</h3>
               <ul role="list">
-                {items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
+                {items.map((item) =>
+                  typeof item === 'string' ? (
+                    <li key={item}>{item}</li>
+                  ) : (
+                    <li key={item.label} className="skill-linked">
+                      <a href={item.href} {...externalLink}>{item.label} ↗</a>
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           ))}

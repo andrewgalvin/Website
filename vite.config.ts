@@ -55,7 +55,6 @@ function htmlTemplate(): Plugin {
 
         const out = html
           .replaceAll('%IDENTITY_EMAIL%', identity.email)
-          .replaceAll('%IDENTITY_PHONE%', identity.phone.e164)
           .replaceAll('%IDENTITY_GITHUB%', identity.github.url)
           .replaceAll('%IDENTITY_LINKEDIN%', identity.linkedin.url)
 

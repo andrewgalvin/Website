@@ -5,6 +5,7 @@ import { cx } from '@/lib/cx'
 import { externalLink } from '@/lib/links'
 import { Icon } from '@/components/ui/Icon'
 import { HeroScene } from './HeroScene'
+import { HeroLiveCard } from './HeroLiveCard'
 
 export function Hero() {
   const { identity } = SITE
@@ -42,6 +43,8 @@ export function Hero() {
             ))}
           </div>
         </div>
+
+        <HeroLiveCard />
 
         <dl className="hero-stats" data-hero>
           {HERO.stats.map((stat) => (

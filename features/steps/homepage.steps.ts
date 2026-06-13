@@ -25,9 +25,8 @@ Then('the contact email on the page matches site.yaml', async ({ page }) => {
 
 Then('the structured data matches the identity in site.yaml', async ({ page }) => {
   const raw = await page.locator('script[type="application/ld+json"]').textContent()
-  const data = JSON.parse(raw ?? '{}') as { email?: string; telephone?: string; sameAs?: string[] }
+  const data = JSON.parse(raw ?? '{}') as { email?: string; sameAs?: string[] }
   expect(data.email).toBe(`mailto:${site.identity.email}`)
-  expect(data.telephone).toBe(site.identity.phone.e164)
   expect(data.sameAs).toContain(site.identity.github.url)
   expect(data.sameAs).toContain(site.identity.linkedin.url)
 })

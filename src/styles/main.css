@@ -575,6 +575,74 @@ ol[role="list"] {
   color: var(--faint);
 }
 
+/* Mobile-only live card: the WebGL console's plain-DOM counterpart, so the
+   live eSnipe feed survives below 64rem where the canvas is hidden. The
+   component renders it only on mobile; this media guard is belt-and-braces. */
+.hero-live-card {
+  margin-top: 2rem;
+  max-width: 23rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 14px;
+  background: #fff;
+}
+
+@media (min-width: 64rem) {
+  .hero-live-card {
+    display: none;
+  }
+}
+
+.hero-live-card dl {
+  margin: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.hero-live-card dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.hero-live-card dt {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hero-live-card dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.hero-live-caption {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.9rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--hairline);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.hero-live-caption::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
 @media (max-width: 40rem) {
   .hero-stats {
     grid-template-columns: 1fr;
@@ -754,6 +822,17 @@ ol[role="list"] {
   border-bottom: 1px solid var(--hairline);
   font-size: 0.95rem;
   color: var(--ink-soft);
+}
+
+/* a skill that links to public evidence reads as a quiet, clickable chip */
+.skill-linked a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.skill-linked a:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 56rem) {
