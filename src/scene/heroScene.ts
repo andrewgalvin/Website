@@ -16,7 +16,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from 'three'
-import { parseLiveStats, STATS_REFRESH_MS, STATS_URL, type LiveStats } from './liveStats'
+import { monitoredCount, parseLiveStats, STATS_REFRESH_MS, STATS_URL, type LiveStats } from './liveStats'
 
 /**
  * Hero accent: "Instrument" — one console panel of the live monitoring
@@ -251,8 +251,8 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
         'SEARCHES',
         SECTION_H,
         live.pollOnSchedulePct !== null
-          ? `${live.activeSearches} active · ${live.pollOnSchedulePct}% on time`
-          : `showing 14 of ${live.activeSearches}`,
+          ? `${monitoredCount(live)} · ${live.pollOnSchedulePct}% on time`
+          : `showing 14 of ${monitoredCount(live)}`,
       )
       // "finds" = new eBay listings the monitor discovered (fleet-wide,
       // across every search); the meta keeps 6k/hr from reading as

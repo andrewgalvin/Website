@@ -15,13 +15,16 @@ export interface LiveStats {
   registeredUsers: number | null
   /** distinct users with an active subscription */
   activeUsers: number | null
-  /** distinct active search definitions being monitored */
+  /** distinct active search definitions */
   activeSearches: number
+  /** searches with an active subscriber: the set actually polled, and the
+   *  denominator the on-schedule SLO is measured against (null if omitted) */
+  monitoredSearches: number | null
   /** new listings discovered in the trailing hour (fleet-wide) */
   findsLastHour: number
   /** seconds since the most recent find — the freshness heartbeat */
   secondsSinceLastFind: number | null
-  /** % of active searches polled within their cadence — an operated SLO */
+  /** % of monitored (subscribed) searches polled within cadence (an operated SLO) */
   pollOnSchedulePct: number | null
 }
 
@@ -51,8 +54,20 @@ export function parseLiveStats(data: unknown): LiveStats | null {
     registeredUsers: finiteNumber(d.registeredUsers) ? Math.max(0, Math.round(d.registeredUsers)) : null,
     activeUsers: finiteNumber(d.activeUsers) ? Math.max(0, Math.round(d.activeUsers)) : null,
     activeSearches: d.activeSearches,
+    monitoredSearches: finiteNumber(d.monitoredSearches)
+      ? Math.max(0, Math.round(d.monitoredSearches))
+      : null,
     findsLastHour: d.findsLastHour,
     secondsSinceLastFind: freshRaw !== null ? Math.max(0, freshRaw) : null,
     pollOnSchedulePct: pct !== null ? Math.max(0, Math.min(100, Math.round(pct))) : null,
   }
 }
+
+/**
+ * Searches actually being polled (those with an active subscriber): the count
+ * the on-schedule SLO is measured against, and what "monitored" should mean on
+ * screen. Falls back to the active-definition count if the endpoint predates
+ * the field, so the display degrades to the old behavior rather than blanking.
+ */
+export const monitoredCount = (s: LiveStats): number =>
+  s.monitoredSearches ?? s.activeSearches

@@ -25,7 +25,7 @@ stats:
     live: registered
     liveSub: active
     label: users on eSnipe
-  - value: 287
+  - value: 268
     live: searches
     label: searches monitored around the clock, on eSnipe
 

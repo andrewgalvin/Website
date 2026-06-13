@@ -1,5 +1,6 @@
 import { useLiveStats } from '@/hooks/useLiveStats'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { monitoredCount } from '@/scene/liveStats'
 
 /**
  * The WebGL telemetry console is desktop-only (the canvas is display:none
@@ -13,13 +14,14 @@ export function HeroLiveCard() {
   const stats = useLiveStats(mobile)
   if (!mobile || !stats) return null
 
+  const monitored = monitoredCount(stats)
   const rows: Array<[string, string]> = [
     ['Last find', `${stats.secondsSinceLastFind ?? 0}s ago`],
     [
       'Searches',
       stats.pollOnSchedulePct !== null
-        ? `${stats.activeSearches} · ${stats.pollOnSchedulePct}% on time`
-        : `${stats.activeSearches} active`,
+        ? `${monitored} · ${stats.pollOnSchedulePct}% on time`
+        : `${monitored}`,
     ],
     ['New listings · 1h', stats.findsLastHour.toLocaleString('en-US')],
   ]
