@@ -1,5 +1,5 @@
 import type { Stat } from '@/content'
-import type { LiveStats } from '@/scene/liveStats'
+import { monitoredCount, type LiveStats } from '@/scene/liveStats'
 import { formatCount } from '@/lib/format'
 import { useCountUp } from '@/hooks/useCountUp'
 
@@ -15,7 +15,7 @@ export function HeroStat({ stat, live }: { stat: Stat; live: LiveStats | null })
     stat.live === 'registered'
       ? live?.registeredUsers
       : stat.live === 'searches'
-        ? live?.activeSearches
+        ? (live ? monitoredCount(live) : null)
         : null
   const target = typeof liveValue === 'number' ? liveValue : stat.value
   const shown = useCountUp(target)

@@ -13,6 +13,7 @@ describe('parseLiveStats', () => {
         registeredUsers: 197,
         activeUsers: 92,
         activeSearches: 286,
+        monitoredSearches: 268,
         findsLastHour: 6190,
         secondsSinceLastFind: 4,
         pollOnSchedulePct: 93,
@@ -21,16 +22,18 @@ describe('parseLiveStats', () => {
       registeredUsers: 197,
       activeUsers: 92,
       activeSearches: 286,
+      monitoredSearches: 268,
       findsLastHour: 6190,
       secondsSinceLastFind: 4,
       pollOnSchedulePct: 93,
     })
   })
 
-  it('defaults the user counts to null when absent', () => {
+  it('defaults the user and monitored counts to null when absent', () => {
     const stats = parseLiveStats({ activeSearches: 1, findsLastHour: 2 })
     expect(stats?.registeredUsers).toBeNull()
     expect(stats?.activeUsers).toBeNull()
+    expect(stats?.monitoredSearches).toBeNull()
   })
 
   it('defaults pollOnSchedulePct to null and clamps it to 0..100', () => {
