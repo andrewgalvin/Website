@@ -16,6 +16,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from 'three'
+import { parseLiveStats, type LiveStats } from './liveStats'
 
 /**
  * Hero accent: "Instrument" — one console panel of the live monitoring
@@ -63,13 +64,6 @@ const PAD = 26
 /** public aggregate stats from eSnipe production (counts only, 10s cache) */
 const STATS_URL = 'https://xdpizcaopjvulpoyyxum.supabase.co/functions/v1/portfolio-stats'
 const STATS_REFRESH_MS = 10_000
-
-interface LiveStats {
-  activeSearches: number
-  findsLastHour: number
-  /** seconds since the most recent find — the freshness heartbeat */
-  secondsSinceLastFind: number | null
-}
 /** css-px y offsets of the three section centers from the panel center */
 const SECTION_OFFSETS = [-SECTION_H, 0, SECTION_H]
 /** canvas-2d textures draw at 2x and minify, which keeps the type crisp */
@@ -254,7 +248,10 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
     if (live) {
       sectionLabel(ctx, 'LAST FIND', 0)
       sectionLabel(ctx, 'SEARCHES', SECTION_H, `showing 14 of ${live.activeSearches}`)
-      sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'last hour')
+      // "finds" = new eBay listings the monitor discovered (fleet-wide,
+      // across every search); the meta keeps 6k/hr from reading as
+      // per-user alerts
+      sectionLabel(ctx, 'FINDS', SECTION_H * 2, 'new listings · 1h')
       // operating signal: was the fleet fresh at the last refresh? An SLO,
       // not a stray number — blue dot = healthy, grey = delayed. Stays in
       // the one-accent palette (blue good, grey degraded).
@@ -763,20 +760,8 @@ export function initHeroScene(canvas: HTMLCanvasElement, hooks: HeroSceneHooks =
       // function's own 10s cache still shields the database
       const res = await fetch(STATS_URL, { cache: 'no-store', signal: AbortSignal.timeout(4000) })
       if (!res.ok) return
-      const data = (await res.json()) as {
-        activeSearches?: number
-        findsLastHour?: number
-        secondsSinceLastFind?: number
-        secondsSinceLastPoll?: number
-      }
-      if (typeof data.activeSearches === 'number' && typeof data.findsLastHour === 'number') {
-        const fresh = data.secondsSinceLastFind ?? data.secondsSinceLastPoll
-        applyLive({
-          activeSearches: data.activeSearches,
-          findsLastHour: data.findsLastHour,
-          secondsSinceLastFind: typeof fresh === 'number' ? fresh : null,
-        })
-      }
+      const stats = parseLiveStats(await res.json())
+      if (stats) applyLive(stats)
     } catch {
       // offline, blocked, or slow: the simulation keeps the seat warm
     }
