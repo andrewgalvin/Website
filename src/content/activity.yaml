@@ -1,0 +1,8 @@
+# GitHub activity section. The count and the heatmap come live from the
+# /api/github-contributions function on load; this file is just the framing.
+title: Activity
+heading: Building most days
+blurb: A rolling year of commits across public and private work. Private repositories add to the count without being named.
+statLabel: contributions in the last year
+linkLabel: See the profile
+asOf: Pulled live from the GitHub API on load.

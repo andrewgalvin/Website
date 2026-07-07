@@ -707,6 +707,166 @@ ol[role="list"] {
   margin-block: clamp(3rem, 7vh, 4.5rem) 1.75rem;
 }
 
+/* ---------- github activity ---------- */
+.gh-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.gh-heading {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.gh-blurb {
+  margin-top: 0.5rem;
+  max-width: 34rem;
+  color: var(--muted);
+}
+
+.gh-total {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.gh-total-num {
+  font-family: var(--font-display);
+  font-size: var(--step-4);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.gh-total-label {
+  margin-top: 0.4rem;
+  font-size: 0.86rem;
+  color: var(--muted);
+  max-width: 11rem;
+}
+
+.gh-figure {
+  margin: 0;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+/* 53 week-columns overflow narrow screens; scroll them, don't squash them */
+.gh-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+}
+
+.gh-graph {
+  --gh-cell: 12px;
+  --gh-gap: 3px;
+  display: inline-block;
+  min-width: max-content;
+}
+
+.gh-months {
+  display: flex;
+  gap: var(--gh-gap);
+  margin-bottom: 4px;
+  height: 0.95rem;
+}
+
+.gh-month {
+  position: relative;
+  width: var(--gh-cell);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.gh-weeks {
+  display: flex;
+  gap: var(--gh-gap);
+}
+
+.gh-week {
+  display: grid;
+  grid-template-rows: repeat(7, var(--gh-cell));
+  gap: var(--gh-gap);
+}
+
+.gh-day {
+  width: var(--gh-cell);
+  height: var(--gh-cell);
+  border-radius: 2px;
+  /* a hair of ink keeps empty cells legible on white */
+  background: var(--gh-l0);
+  box-shadow: inset 0 0 0 1px rgb(20 24 31 / 0.04);
+}
+
+/* accent ramp, empty → deep; decorative only, so it need not hit text AA */
+.gh-graph,
+.gh-scale {
+  --gh-l0: #eef2f6;
+  --gh-l1: #c3d6ea;
+  --gh-l2: #8aabd1;
+  --gh-l3: #5b84b5;
+  --gh-l4: #2b4468;
+}
+
+.gh-day[data-level='1'] { background: var(--gh-l1); }
+.gh-day[data-level='2'] { background: var(--gh-l2); }
+.gh-day[data-level='3'] { background: var(--gh-l3); }
+.gh-day[data-level='4'] { background: var(--gh-l4); }
+
+.gh-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+}
+
+.gh-scale {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.gh-scale .gh-day {
+  margin: 0 2px;
+}
+
+.gh-link {
+  margin-top: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 40rem) {
+  .gh-total {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.65rem;
+  }
+  .gh-total-label {
+    margin-top: 0;
+  }
+}
+
 /* ---------- about ---------- */
 .about-grid {
   display: grid;

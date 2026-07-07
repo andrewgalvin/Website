@@ -2,6 +2,12 @@
   command = "npm run build"
   publish = "dist"
 
+# github-contributions.mts proxies the GitHub calendar; it reads GITHUB_TOKEN
+# from the site's env (Site settings → Environment variables), never the client.
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 # hashed filenames: cache forever
 [[headers]]
   for = "/assets/*"

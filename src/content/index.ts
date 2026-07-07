@@ -13,6 +13,7 @@ import type {
   ProjectsContent,
   SiteContent,
   SkillsContent,
+  ActivityContent,
 } from './schema'
 
 export type { Stat, FeaturedProject } from './schema'
@@ -23,6 +24,7 @@ import about from './about.yaml'
 import projects from './projects.yaml'
 import experience from './experience.yaml'
 import skills from './skills.yaml'
+import activity from './activity.yaml'
 import contact from './contact.yaml'
 
 export const SITE = site as SiteContent
@@ -31,6 +33,7 @@ export const ABOUT = about as AboutContent
 export const PROJECTS = projects as ProjectsContent
 export const EXPERIENCE = experience as ExperienceContent
 export const SKILLS = skills as SkillsContent
+export const ACTIVITY = activity as ActivityContent
 export const CONTACT = contact as ContactContent
 
 /** Resolves content href aliases: "@resume" → identity.resume. */
