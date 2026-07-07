@@ -6,6 +6,7 @@ import { Hero } from '@/components/sections/Hero'
 import { About } from '@/components/sections/About'
 import { Projects } from '@/components/sections/Projects'
 import { Experience } from '@/components/sections/Experience'
+import { GitHubActivity } from '@/components/sections/GitHubActivity'
 import { Skills } from '@/components/sections/Skills'
 import { Contact } from '@/components/sections/Contact'
 
@@ -25,6 +26,7 @@ export default function App() {
         <About />
         <Projects />
         <Experience />
+        <GitHubActivity />
         <Skills />
         <Contact />
       </main>

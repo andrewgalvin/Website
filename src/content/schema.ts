@@ -131,6 +131,15 @@ export const skillsSchema = z.strictObject({
   ),
 })
 
+export const activitySchema = z.strictObject({
+  title: z.string().min(1),
+  heading: z.string().min(1),
+  blurb: z.string().min(1),
+  statLabel: z.string().min(1),
+  linkLabel: z.string().min(1),
+  asOf: z.string().min(1),
+})
+
 export const contactSchema = z.strictObject({
   title: z.string().min(1),
   lead: z.string().min(1),
@@ -145,6 +154,7 @@ export const CONTENT_SCHEMAS = {
   'projects.yaml': projectsSchema,
   'experience.yaml': experienceSchema,
   'skills.yaml': skillsSchema,
+  'activity.yaml': activitySchema,
   'contact.yaml': contactSchema,
 } as const
 
@@ -156,4 +166,5 @@ export type AboutContent = z.infer<typeof aboutSchema>
 export type ProjectsContent = z.infer<typeof projectsSchema>
 export type ExperienceContent = z.infer<typeof experienceSchema>
 export type SkillsContent = z.infer<typeof skillsSchema>
+export type ActivityContent = z.infer<typeof activitySchema>
 export type ContactContent = z.infer<typeof contactSchema>
