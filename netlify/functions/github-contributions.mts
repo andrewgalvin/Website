@@ -3,7 +3,7 @@
  * hold a token, and the calendar (which includes PRIVATE contribution counts)
  * needs one — so this function holds GITHUB_TOKEN and returns only the shape
  * the heatmap needs: totals and per-day counts. Repo names, commit messages,
- * and org names never cross this boundary, so nokiny-org stays unnamed.
+ * and org names never cross this boundary, so private work stays unnamed.
  *
  * Env:
  *   GITHUB_TOKEN  — a PAT (classic: read:user, or fine-grained w/ read access).
